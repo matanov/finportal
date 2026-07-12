@@ -1,210 +1,222 @@
 ---
-import astroLogo from '../assets/astro.svg';
-import background from '../assets/background.svg';
+// Welcome.astro — Branded homepage for RetireWise
 ---
 
-<div id="container">
-	<img id="background" src={background.src} alt="" fetchpriority="high" />
-	<main>
-		<section id="hero">
-			<a href="https://astro.build"
-				><img src={astroLogo.src} width="115" height="48" alt="Astro Homepage" /></a
-			>
-			<h1>
-				To get started, open the <code><pre>src/pages</pre></code> directory in your project.
-			</h1>
-			<section id="links">
-				<a class="button" href="https://docs.astro.build">Read our docs</a>
-				<a href="https://astro.build/chat"
-					>Join our Discord <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36"
-						><path
-							fill="currentColor"
-							d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"
-						></path></svg
-					>
-				</a>
-			</section>
-		</section>
-	</main>
+<!-- ─── Nav ─────────────────────────────────────────────────────────────── -->
+<header style="background-color: var(--color-primary-700); border-bottom: 1px solid var(--color-primary-600);">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 4rem;">
+    <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+      <div style="width: 2rem; height: 2rem; background-color: var(--color-gold-400); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#0F2244" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: white; letter-spacing: -0.025em;">RetireWise</span>
+    </a>
+    <nav style="display: flex; align-items: center; gap: 2rem;">
+      <a href="/calculators" style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;">Calculators</a>
+      <a href="/blog" style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;">Articles</a>
+      <a href="/about" style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;">About</a>
+      <a href="/calculators" style="background-color: var(--color-gold-400); color: var(--color-primary-700); font-size: 0.875rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: var(--radius-md); text-decoration: none;">Get Started</a>
+    </nav>
+  </div>
+</header>
 
-	<a href="https://astro.build/blog/astro-6-beta/" id="news" class="box">
-		<svg width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg"
-			><path
-				d="M24.667 12c1.333 1.414 2 3.192 2 5.334 0 4.62-4.934 5.7-7.334 12C18.444 28.567 18 27.456 18 26c0-4.642 6.667-7.053 6.667-14Zm-5.334-5.333c1.6 1.65 2.4 3.43 2.4 5.333 0 6.602-8.06 7.59-6.4 17.334C13.111 27.787 12 25.564 12 22.666c0-4.434 7.333-8 7.333-16Zm-6-5.333C15.111 3.555 16 5.556 16 7.333c0 8.333-11.333 10.962-5.333 22-3.488-.774-6-4-6-8 0-8.667 8.666-10 8.666-20Z"
-				fill="#111827"></path></svg
-		>
-		<h2>What's New in Astro 6.0?</h2>
-		<p>
-			Redesigned dev server, fonts, live collections, built-in CSP support, and more! Click to
-			explore Astro 6.0's new features.
-		</p>
-	</a>
-</div>
+<!-- ─── Hero ─────────────────────────────────────────────────────────────── -->
+<section style="background: linear-gradient(135deg, var(--color-primary-700) 0%, var(--color-primary-600) 60%, var(--color-teal-600) 100%); padding: 6rem 1.5rem;">
+  <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+    <span style="display: inline-block; background-color: rgba(201,160,53,0.15); color: var(--color-gold-300); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.375rem 1rem; border-radius: var(--radius-full); margin-bottom: 1.5rem; border: 1px solid rgba(201,160,53,0.3);">
+      Retirement Planning Made Clear
+    </span>
+    <h1 style="font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; color: white; line-height: 1.15; letter-spacing: -0.03em; margin: 0 0 1.5rem;">
+      Plan Your Retirement<br/>
+      <span style="color: var(--color-gold-400);">With Confidence</span>
+    </h1>
+    <p style="font-size: 1.125rem; color: var(--color-primary-100); line-height: 1.7; max-width: 640px; margin: 0 auto 2.5rem;">
+      Sophisticated calculators and trusted financial insights to help you understand exactly where you stand — and what it takes to get where you want to be.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/calculators" style="background-color: var(--color-gold-400); color: var(--color-primary-700); font-weight: 600; font-size: 1rem; padding: 0.875rem 2rem; border-radius: var(--radius-md); text-decoration: none; box-shadow: var(--shadow-lg);">
+        Explore Calculators
+      </a>
+      <a href="/blog" style="background-color: rgba(255,255,255,0.1); color: white; font-weight: 500; font-size: 1rem; padding: 0.875rem 2rem; border-radius: var(--radius-md); text-decoration: none; border: 1px solid rgba(255,255,255,0.2);">
+        Read Articles
+      </a>
+    </div>
+  </div>
+</section>
 
-<style>
-	#background {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-		filter: blur(100px);
-	}
+<!-- ─── Trust Bar ─────────────────────────────────────────────────────────── -->
+<section style="background-color: var(--color-card); border-bottom: 1px solid var(--color-border);">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; text-align: center;">
+    <div>
+      <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; color: var(--color-primary-700);">8+</div>
+      <div style="font-size: 0.875rem; color: var(--color-muted); margin-top: 0.25rem;">Retirement Calculators</div>
+    </div>
+    <div>
+      <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; color: var(--color-primary-700);">100%</div>
+      <div style="font-size: 0.875rem; color: var(--color-muted); margin-top: 0.25rem;">Free to Use</div>
+    </div>
+    <div>
+      <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; color: var(--color-primary-700);">No</div>
+      <div style="font-size: 0.875rem; color: var(--color-muted); margin-top: 0.25rem;">Sign-up Required</div>
+    </div>
+    <div>
+      <div style="font-family: var(--font-mono); font-size: 1.75rem; font-weight: 700; color: var(--color-primary-700);">Real</div>
+      <div style="font-size: 0.875rem; color: var(--color-muted); margin-top: 0.25rem;">Financial Data</div>
+    </div>
+  </div>
+</section>
 
-	#container {
-		font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
-		height: 100%;
-	}
+<!-- ─── Calculators ───────────────────────────────────────────────────────── -->
+<section style="background-color: var(--color-surface); padding: 5rem 1.5rem;">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <h2 style="font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; color: var(--color-primary-700); margin: 0 0 0.75rem;">Retirement Calculators</h2>
+      <p style="font-size: 1rem; color: var(--color-muted); max-width: 520px; margin: 0 auto;">Built for accuracy. Designed for clarity. Each tool models real-world retirement scenarios.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
 
-	main {
-		height: 100%;
-		display: flex;
-		justify-content: center;
-	}
+      <a href="/calculators/401k" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">📈</span>
+          <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);">Most Popular</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">401(k) Growth Calculator</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Project your 401(k) balance at retirement based on contributions, employer match, and investment returns.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	#hero {
-		display: flex;
-		align-items: start;
-		flex-direction: column;
-		justify-content: center;
-		padding: 16px;
-	}
+      <a href="/calculators/safe-withdrawal" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">🏦</span>
+          <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-primary-50); color: var(--color-primary-600);">Advanced</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">Safe Withdrawal Rate</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Find your sustainable withdrawal rate using Monte Carlo simulation across 10,000 market scenarios.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	h1 {
-		font-size: 22px;
-		margin-top: 0.25em;
-	}
+      <a href="/calculators/retirement-age" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">📅</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">Retirement Age Planner</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Discover your earliest possible retirement date given your savings rate, expenses, and target portfolio.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	#links {
-		display: flex;
-		gap: 16px;
-	}
+      <a href="/calculators/healthcare" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">💊</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">Healthcare Cost Estimator</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Estimate healthcare costs in retirement including Medicare, supplemental insurance, and out-of-pocket expenses.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	#links a {
-		display: flex;
-		align-items: center;
-		padding: 10px 12px;
-		color: #111827;
-		text-decoration: none;
-		transition: color 0.2s;
-	}
+      <a href="/calculators/social-security" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">🏛️</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">Social Security Optimizer</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Model different Social Security claiming ages to maximize your lifetime benefit.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	#links a:hover {
-		color: rgb(78, 80, 86);
-	}
+      <a href="/calculators/rmd" style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+          <span style="font-size: 1.75rem;">💰</span>
+          <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-success-light); color: var(--color-success);">New</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;">Required Minimum Distributions</h3>
+        <p style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;">Calculate your annual RMDs from traditional IRAs and 401(k)s starting at age 73.</p>
+        <div style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;">
+          Open Calculator
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </a>
 
-	#links a svg {
-		height: 1em;
-		margin-left: 8px;
-	}
+    </div>
+  </div>
+</section>
 
-	#links a.button {
-		color: white;
-		background: linear-gradient(83.21deg, #3245ff 0%, #bc52ee 100%);
-		box-shadow:
-			inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-			inset 0 -2px 0 rgba(0, 0, 0, 0.24);
-		border-radius: 10px;
-	}
+<!-- ─── Articles ──────────────────────────────────────────────────────────── -->
+<section style="background-color: var(--color-primary-700); padding: 5rem 1.5rem;">
+  <div style="max-width: 1280px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <h2 style="font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; color: white; margin: 0 0 0.75rem;">Latest Articles</h2>
+      <p style="font-size: 1rem; color: var(--color-primary-100); max-width: 520px; margin: 0 auto;">Clear, unbiased financial writing — no ads, no sponsored content.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
 
-	#links a.button:hover {
-		color: rgb(230, 230, 230);
-		box-shadow: none;
-	}
+      <a href="/blog" style="background-color: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block;">
+        <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-400);">Strategy</span>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: white; margin: 0.5rem 0 0.75rem; line-height: 1.35;">The 4% Rule in 2025: Does It Still Hold Up?</h3>
+        <p style="font-size: 0.875rem; color: var(--color-primary-100); line-height: 1.6; margin: 0 0 1.25rem;">With elevated valuations and lower expected returns, we examine whether the classic safe withdrawal rate still protects retirees.</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary-200);">
+          <span>Jul 8, 2025</span><span>8 min read</span>
+        </div>
+      </a>
 
-	pre {
-		font-family:
-			ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono',
-			monospace;
-		font-weight: normal;
-		background: linear-gradient(14deg, #d83333 0%, #f041ff 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-		margin: 0;
-	}
+      <a href="/blog" style="background-color: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block;">
+        <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-400);">Tax Planning</span>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: white; margin: 0.5rem 0 0.75rem; line-height: 1.35;">Roth Conversion Ladders: A Step-by-Step Guide</h3>
+        <p style="font-size: 0.875rem; color: var(--color-primary-100); line-height: 1.6; margin: 0 0 1.25rem;">How to strategically convert traditional IRA funds to Roth over time to minimize lifetime taxes in retirement.</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary-200);">
+          <span>Jul 2, 2025</span><span>12 min read</span>
+        </div>
+      </a>
 
-	h2 {
-		margin: 0 0 1em;
-		font-weight: normal;
-		color: #111827;
-		font-size: 20px;
-	}
+      <a href="/blog" style="background-color: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block;">
+        <span style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-400);">Social Security</span>
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: white; margin: 0.5rem 0 0.75rem; line-height: 1.35;">Why Waiting Until 70 Is Almost Always Worth It</h3>
+        <p style="font-size: 0.875rem; color: var(--color-primary-100); line-height: 1.6; margin: 0 0 1.25rem;">The math behind delaying Social Security and why most retirees leave significant money on the table by claiming early.</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary-200);">
+          <span>Jun 25, 2025</span><span>6 min read</span>
+        </div>
+      </a>
 
-	p {
-		color: #4b5563;
-		font-size: 16px;
-		line-height: 24px;
-		letter-spacing: -0.006em;
-		margin: 0;
-	}
+    </div>
+    <div style="text-align: center; margin-top: 2.5rem;">
+      <a href="/blog" style="display: inline-block; border: 1px solid rgba(255,255,255,0.25); color: white; font-size: 0.875rem; font-weight: 500; padding: 0.75rem 1.75rem; border-radius: var(--radius-md); text-decoration: none;">
+        View All Articles
+      </a>
+    </div>
+  </div>
+</section>
 
-	code {
-		display: inline-block;
-		background:
-			linear-gradient(66.77deg, #f3cddd 0%, #f5cee7 100%) padding-box,
-			linear-gradient(155deg, #d83333 0%, #f041ff 18%, #f5cee7 45%) border-box;
-		border-radius: 8px;
-		border: 1px solid transparent;
-		padding: 6px 8px;
-	}
-
-	.box {
-		padding: 16px;
-		background: rgba(255, 255, 255, 1);
-		border-radius: 16px;
-		border: 1px solid white;
-	}
-
-	#news {
-		position: absolute;
-		bottom: 16px;
-		right: 16px;
-		max-width: 300px;
-		text-decoration: none;
-		transition: background 0.2s;
-		backdrop-filter: blur(50px);
-	}
-
-	#news:hover {
-		background: rgba(255, 255, 255, 0.55);
-	}
-
-	@media screen and (max-height: 368px) {
-		#news {
-			display: none;
-		}
-	}
-
-	@media screen and (max-width: 768px) {
-		#container {
-			display: flex;
-			flex-direction: column;
-		}
-
-		#hero {
-			display: block;
-			padding-top: 10%;
-		}
-
-		#links {
-			flex-wrap: wrap;
-		}
-
-		#links a.button {
-			padding: 14px 18px;
-		}
-
-		#news {
-			right: 16px;
-			left: 16px;
-			bottom: 2.5rem;
-			max-width: 100%;
-		}
-
-		h1 {
-			line-height: 1.5;
-		}
-	}
-</style>
+<!-- ─── Footer ────────────────────────────────────────────────────────────── -->
+<footer style="background-color: var(--color-primary-800); border-top: 1px solid rgba(255,255,255,0.06); padding: 3rem 1.5rem;">
+  <div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center;">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <div style="width: 1.5rem; height: 1.5rem; background-color: var(--color-gold-400); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#0F2244" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span style="font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: white;">RetireWise</span>
+    </div>
+    <p style="font-size: 0.8rem; color: var(--color-primary-200); max-width: 560px; line-height: 1.6; margin: 0;">
+      RetireWise provides educational tools and information for retirement planning purposes only. This is not financial advice. Always consult a qualified financial advisor before making investment decisions.
+    </p>
+    <p style="font-size: 0.75rem; color: var(--color-primary-300); margin: 0;">
+      &copy; {new Date().getFullYear()} RetireWise. All rights reserved.
+    </p>
+  </div>
+</footer>

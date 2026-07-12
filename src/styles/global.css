@@ -1,0 +1,187 @@
+/* src/styles/global.css */
+@import "tailwindcss";
+
+/* ─── Fonts ─────────────────────────────────────────────────────────────── */
+@import "@fontsource/playfair-display/400.css";
+@import "@fontsource/playfair-display/600.css";
+@import "@fontsource/playfair-display/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+/* ─── Brand Design Tokens ───────────────────────────────────────────────── */
+@theme {
+
+  /* Colors — Primary (Deep Navy) */
+  --color-primary-50:  #e8edf5;
+  --color-primary-100: #c5d0e6;
+  --color-primary-200: #9fb0d4;
+  --color-primary-300: #7890c2;
+  --color-primary-400: #5a76b4;
+  --color-primary-500: #3b5ca7;
+  --color-primary-600: #1A3A6E;
+  --color-primary-700: #0F2244;
+  --color-primary-800: #091829;
+  --color-primary-900: #040d17;
+
+  /* Colors — Gold (Secondary) */
+  --color-gold-50:  #fdf8ec;
+  --color-gold-100: #f8ecc8;
+  --color-gold-200: #f2da97;
+  --color-gold-300: #e8c35d;
+  --color-gold-400: #C9A035;
+  --color-gold-500: #a87e22;
+  --color-gold-600: #855f14;
+  --color-gold-700: #5e420c;
+  --color-gold-800: #3a2807;
+  --color-gold-900: #1a1103;
+
+  /* Colors — Teal (Accent) */
+  --color-teal-50:  #e6f4f9;
+  --color-teal-100: #c0e3f0;
+  --color-teal-200: #92cce4;
+  --color-teal-300: #5fb4d7;
+  --color-teal-400: #3899c4;
+  --color-teal-500: #2A7D9C;
+  --color-teal-600: #1f6179;
+  --color-teal-700: #154557;
+  --color-teal-800: #0c2c38;
+  --color-teal-900: #05151c;
+
+  /* Colors — Semantic */
+  --color-success-light: #d1fae5;
+  --color-success:       #1A7F4E;
+  --color-success-dark:  #145f3a;
+
+  --color-warning-light: #fef3c7;
+  --color-warning:       #D97706;
+  --color-warning-dark:  #b45309;
+
+  --color-danger-light:  #fee2e2;
+  --color-danger:        #B91C1C;
+  --color-danger-dark:   #991b1b;
+
+  /* Colors — Surface & Neutral */
+  --color-surface:    #F9F7F4;
+  --color-card:       #FFFFFF;
+  --color-border:     #E2DDD6;
+  --color-muted:      #64748B;
+  --color-muted-light:#94A3B8;
+
+  /* Typography — Font Families */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body:    "Inter", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "Fira Code", monospace;
+
+  /* Typography — Font Sizes */
+  --font-size-xs:   0.75rem;   /* 12px */
+  --font-size-sm:   0.875rem;  /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg:   1.125rem;  /* 18px */
+  --font-size-xl:   1.25rem;   /* 20px */
+  --font-size-2xl:  1.5rem;    /* 24px */
+  --font-size-3xl:  1.875rem;  /* 30px */
+  --font-size-4xl:  2.25rem;   /* 36px */
+  --font-size-5xl:  3rem;      /* 48px */
+  --font-size-6xl:  3.75rem;   /* 60px */
+
+  /* Typography — Line Heights */
+  --line-height-tight:  1.25;
+  --line-height-snug:   1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed:1.625;
+  --line-height-loose:  2;
+
+  /* Typography — Letter Spacing */
+  --tracking-tight:  -0.025em;
+  --tracking-normal:  0em;
+  --tracking-wide:    0.025em;
+  --tracking-wider:   0.05em;
+  --tracking-widest:  0.1em;
+
+  /* Spacing Scale */
+  --spacing-px:  1px;
+  --spacing-0:   0;
+  --spacing-1:   0.25rem;
+  --spacing-2:   0.5rem;
+  --spacing-3:   0.75rem;
+  --spacing-4:   1rem;
+  --spacing-5:   1.25rem;
+  --spacing-6:   1.5rem;
+  --spacing-8:   2rem;
+  --spacing-10:  2.5rem;
+  --spacing-12:  3rem;
+  --spacing-16:  4rem;
+  --spacing-20:  5rem;
+  --spacing-24:  6rem;
+  --spacing-32:  8rem;
+
+  /* Border Radius */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;  /* 4px  — inputs, badges */
+  --radius-md:   0.5rem;   /* 8px  — default */
+  --radius-lg:   0.75rem;  /* 12px — cards */
+  --radius-xl:   1rem;     /* 16px — modals, panels */
+  --radius-2xl:  1.5rem;   /* 24px — featured cards */
+  --radius-full: 9999px;   /* pills, avatars */
+
+  /* Shadows — Subtle, layered (elevated calculator cards) */
+  --shadow-sm:  0 1px 2px 0 rgb(15 34 68 / 0.05);
+  --shadow-md:  0 4px 6px -1px rgb(15 34 68 / 0.08), 0 2px 4px -2px rgb(15 34 68 / 0.05);
+  --shadow-lg:  0 10px 15px -3px rgb(15 34 68 / 0.10), 0 4px 6px -4px rgb(15 34 68 / 0.06);
+  --shadow-xl:  0 20px 25px -5px rgb(15 34 68 / 0.12), 0 8px 10px -6px rgb(15 34 68 / 0.06);
+  --shadow-2xl: 0 25px 50px -12px rgb(15 34 68 / 0.20);
+  --shadow-inner: inset 0 2px 4px 0 rgb(15 34 68 / 0.06);
+
+  /* Transitions */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+
+  /* Breakpoints */
+  --breakpoint-sm:  640px;
+  --breakpoint-md:  768px;
+  --breakpoint-lg:  1024px;
+  --breakpoint-xl:  1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-primary-700);
+    background-color: var(--color-surface);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    line-height: var(--line-height-tight);
+    color: var(--color-primary-700);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  a {
+    color: var(--color-teal-500);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  a:hover {
+    color: var(--color-teal-600);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+}
