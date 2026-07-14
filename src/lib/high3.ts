@@ -254,7 +254,22 @@ export function calculateHigh3(periods: ServicePeriod[]): High3Result | null {
 // Convenience: build ServicePeriods from grade/step/locality history
 // ---------------------------------------------------------------------------
 
-import { lookupSalary, prefetchYears } from "./payLookup";
+import {
+  lookupSalary,
+  prefetchYears,
+  FIRST_PAY_YEAR,
+  LAST_PAY_YEAR,
+} from "./payLookup";
+
+/** Clamp a year to the range of available pay tables */
+function clampPayYear(year: number): number {
+  return Math.min(Math.max(year, FIRST_PAY_YEAR), LAST_PAY_YEAR);
+}
+
+/** Derive pay year from an effective date string (YYYY-MM-DD) */
+function payYearFromDate(effectiveDate: string): number {
+  return clampPayYear(parseInt(effectiveDate.split("-")[0], 10));
+}
 
 export interface CareerStep {
   /** Date this grade/step/locality became effective (YYYY-MM-DD) */
@@ -263,8 +278,7 @@ export interface CareerStep {
   step: number;
   /** Locality code, e.g. "DCB", "GS" (rest-of-US) */
   locality: string;
-  /** The pay year to use for lookup (usually the calendar year of effectiveDate) */
-  payYear: number;
+  // payYear is intentionally absent — derived automatically from effectiveDate
 }
 
 /**
@@ -289,8 +303,11 @@ export async function careerStepsToServicePeriods(
     (a, b) => toOPMDay(a.effectiveDate) - toOPMDay(b.effectiveDate),
   );
 
+  // Derive pay year from each step's effective date, clamp to available range
   // Prefetch all unique years in parallel — one network round-trip total
-  const uniqueYears = [...new Set(sorted.map((s) => s.payYear))];
+  const uniqueYears = [
+    ...new Set(sorted.map((s) => payYearFromDate(s.effectiveDate))),
+  ];
   await prefetchYears(uniqueYears);
 
   const periods: ServicePeriod[] = [];
@@ -301,15 +318,16 @@ export async function careerStepsToServicePeriods(
       i < sorted.length - 1 ? sorted[i + 1].effectiveDate : separationDate;
 
     // Cache is warm after prefetchYears — this await resolves instantly
+    const payYear = payYearFromDate(step.effectiveDate);
     const salary = await lookupSalary(
-      step.payYear,
+      payYear,
       step.locality,
       step.grade,
       step.step,
     );
     if (salary === null) {
       return {
-        error: `No salary found for year=${step.payYear}, locality=${step.locality}, grade=${step.grade}, step=${step.step}`,
+        error: `No salary found for year=${payYearFromDate(step.effectiveDate)}, locality=${step.locality}, grade=${step.grade}, step=${step.step}`,
       };
     }
 
@@ -320,7 +338,7 @@ export async function careerStepsToServicePeriods(
       grade: step.grade,
       step: step.step,
       locality: step.locality,
-      year: step.payYear,
+      year: payYearFromDate(step.effectiveDate),
     });
   }
 
