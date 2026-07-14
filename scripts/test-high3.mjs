@@ -10,41 +10,74 @@
 // Core functions (mirrors high3.ts exactly)
 // ---------------------------------------------------------------------------
 
+const FIRST_PAY_YEAR = 2016;
+const LAST_PAY_YEAR = 2026;
+
+function clampPayYear(year) {
+  return Math.min(Math.max(year, FIRST_PAY_YEAR), LAST_PAY_YEAR);
+}
+
+/**
+ * Split a date range at every Jan 1 boundary.
+ * Mirrors splitAtYearBoundaries() in high3.ts exactly.
+ */
+function splitAtYearBoundaries(startDate, endDate) {
+  const startYear = parseInt(startDate.split("-")[0], 10);
+  const endYear = parseInt(endDate.split("-")[0], 10);
+  const result = [];
+
+  for (let year = startYear; year <= endYear; year++) {
+    const segStart = year === startYear ? startDate : `${year}-01-01`;
+    const segEnd = year === endYear ? endDate : `${year + 1}-01-01`;
+    if (segStart >= segEnd) continue;
+    result.push({
+      startDate: segStart,
+      endDate: segEnd,
+      payYear: clampPayYear(year),
+    });
+  }
+
+  return result;
+}
+
 function toOPMDay(dateStr) {
-  const [year, month, day] = dateStr.split('-').map(Number);
+  const [year, month, day] = dateStr.split("-").map(Number);
   return year * 360 + (month - 1) * 30 + Math.min(day, 30);
 }
 
 function fromOPMDay(opmDay) {
   let year = Math.floor(opmDay / 360);
   let remaining = opmDay % 360;
-  if (remaining === 0) { year -= 1; remaining = 360; }
+  if (remaining === 0) {
+    year -= 1;
+    remaining = 360;
+  }
   const month = Math.floor((remaining - 1) / 30) + 1;
   const day = ((remaining - 1) % 30) + 1;
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 function calculateHigh3(periods) {
   if (!periods || periods.length === 0) return null;
 
   const segments = periods
-    .map(p => ({
+    .map((p) => ({
       start: toOPMDay(p.startDate),
-      end:   toOPMDay(p.endDate),
+      end: toOPMDay(p.endDate),
       annualSalary: p.annualSalary,
-      dailyRate:    p.annualSalary / 360,
+      dailyRate: p.annualSalary / 360,
     }))
-    .filter(s => s.end > s.start)
+    .filter((s) => s.end > s.start)
     .sort((a, b) => a.start - b.start);
 
   if (segments.length === 0) return null;
 
-  const serviceStart      = segments[0].start;
-  const serviceEnd        = segments[segments.length - 1].end;
-  const totalServiceDays  = serviceEnd - serviceStart;
-  const HIGH3_DAYS        = 1080;
-  const windowDays        = Math.min(HIGH3_DAYS, totalServiceDays);
-  const isPartialPeriod   = totalServiceDays < HIGH3_DAYS;
+  const serviceStart = segments[0].start;
+  const serviceEnd = segments[segments.length - 1].end;
+  const totalServiceDays = serviceEnd - serviceStart;
+  const HIGH3_DAYS = 1080;
+  const windowDays = Math.min(HIGH3_DAYS, totalServiceDays);
+  const isPartialPeriod = totalServiceDays < HIGH3_DAYS;
 
   const candidates = new Set();
   candidates.add(serviceStart);
@@ -53,35 +86,39 @@ function calculateHigh3(periods) {
     candidates.add(seg.end - windowDays);
   }
 
-  let bestEarned      = -1;
+  let bestEarned = -1;
   let bestWindowStart = serviceStart;
-  const minStart      = serviceStart;
-  const maxStart      = serviceEnd - windowDays;
+  const minStart = serviceStart;
+  const maxStart = serviceEnd - windowDays;
 
   for (const candidate of candidates) {
     if (candidate < minStart || candidate > maxStart) continue;
-    const wEnd  = candidate + windowDays;
-    let earned  = 0;
+    const wEnd = candidate + windowDays;
+    let earned = 0;
     for (const seg of segments) {
       const os = Math.max(seg.start, candidate);
-      const oe = Math.min(seg.end,   wEnd);
+      const oe = Math.min(seg.end, wEnd);
       if (oe > os) earned += (oe - os) * seg.dailyRate;
     }
-    if (earned > bestEarned) { bestEarned = earned; bestWindowStart = candidate; }
+    if (earned > bestEarned) {
+      bestEarned = earned;
+      bestWindowStart = candidate;
+    }
   }
 
-  const high3Average = Math.round((bestEarned * 360) / windowDays * 100) / 100;
+  const high3Average =
+    Math.round(((bestEarned * 360) / windowDays) * 100) / 100;
 
   const wStart = bestWindowStart;
-  const wEnd   = bestWindowStart + windowDays;
+  const wEnd = bestWindowStart + windowDays;
   const contributions = [];
   for (const seg of segments) {
     const os = Math.max(seg.start, wStart);
-    const oe = Math.min(seg.end,   wEnd);
+    const oe = Math.min(seg.end, wEnd);
     if (oe > os) {
       contributions.push({
         startDate: fromOPMDay(os),
-        endDate:   fromOPMDay(oe),
+        endDate: fromOPMDay(oe),
         annualSalary: seg.annualSalary,
         opmDays: oe - os,
         dollarContribution: Math.round((oe - os) * seg.dailyRate * 100) / 100,
@@ -89,8 +126,14 @@ function calculateHigh3(periods) {
     }
   }
 
-  return { high3Average, windowStart: fromOPMDay(wStart), windowEnd: fromOPMDay(wEnd),
-           contributions, totalServiceOPMDays: totalServiceDays, isPartialPeriod };
+  return {
+    high3Average,
+    windowStart: fromOPMDay(wStart),
+    windowEnd: fromOPMDay(wEnd),
+    contributions,
+    totalServiceOPMDays: totalServiceDays,
+    isPartialPeriod,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -129,9 +172,17 @@ function assertStr(label, actual, expected) {
 // ---------------------------------------------------------------------------
 // Test 1: OPM date round-trip
 // ---------------------------------------------------------------------------
-console.log('\n── Test 1: OPM date arithmetic ─────────────────────────────────');
+console.log(
+  "\n── Test 1: OPM date arithmetic ─────────────────────────────────",
+);
 
-const dates = ['2022-01-01', '2022-06-15', '2022-12-30', '2023-03-01', '2020-02-28'];
+const dates = [
+  "2022-01-01",
+  "2022-06-15",
+  "2022-12-30",
+  "2023-03-01",
+  "2020-02-28",
+];
 for (const d of dates) {
   const opm = toOPMDay(d);
   const back = fromOPMDay(opm);
@@ -139,29 +190,33 @@ for (const d of dates) {
 }
 
 // Day 31 → treated as day 30
-assertStr('Jan 31 = Jan 30', fromOPMDay(toOPMDay('2022-01-31')), '2022-01-30');
+assertStr("Jan 31 = Jan 30", fromOPMDay(toOPMDay("2022-01-31")), "2022-01-30");
 
 // 36 OPM months = exactly 1080 days
-const diff = toOPMDay('2025-01-01') - toOPMDay('2022-01-01');
-assert('36 OPM months = 1080 days', diff, 1080, 0);
+const diff = toOPMDay("2025-01-01") - toOPMDay("2022-01-01");
+assert("36 OPM months = 1080 days", diff, 1080, 0);
 
 // ---------------------------------------------------------------------------
 // Test 2: Single salary — any 36-month window gives the same result
 // ---------------------------------------------------------------------------
-console.log('\n── Test 2: Single salary, 4 years ($80,000) ────────────────────');
+console.log(
+  "\n── Test 2: Single salary, 4 years ($80,000) ────────────────────",
+);
 // Employee at $80,000 from 2020-01-01 to 2024-01-01 (4 years = 1440 OPM days)
 // High-3 should be exactly $80,000
 
 const t2 = calculateHigh3([
-  { startDate: '2020-01-01', endDate: '2024-01-01', annualSalary: 80000 }
+  { startDate: "2020-01-01", endDate: "2024-01-01", annualSalary: 80000 },
 ]);
-assert('High-3 average', t2.high3Average, 80000);
+assert("High-3 average", t2.high3Average, 80000);
 console.log(`     Window: ${t2.windowStart} → ${t2.windowEnd}`);
 
 // ---------------------------------------------------------------------------
 // Test 3: Rising salary — highest window is the LAST 3 years
 // ---------------------------------------------------------------------------
-console.log('\n── Test 3: Rising salary — should pick last 36 months ──────────');
+console.log(
+  "\n── Test 3: Rising salary — should pick last 36 months ──────────",
+);
 // 2020-01-01 to 2022-01-01: $70,000  (24 months)
 // 2022-01-01 to 2024-01-01: $90,000  (24 months)
 // Best window: 2021-01-01 → 2024-01-01
@@ -170,17 +225,19 @@ console.log('\n── Test 3: Rising salary — should pick last 36 months ─�
 //   = (70000 + 180000) / 3 = $83,333.33
 
 const t3 = calculateHigh3([
-  { startDate: '2020-01-01', endDate: '2022-01-01', annualSalary: 70000 },
-  { startDate: '2022-01-01', endDate: '2024-01-01', annualSalary: 90000 },
+  { startDate: "2020-01-01", endDate: "2022-01-01", annualSalary: 70000 },
+  { startDate: "2022-01-01", endDate: "2024-01-01", annualSalary: 90000 },
 ]);
-assert('High-3 average', t3.high3Average, 83333, 1);
-assertStr('Window start', t3.windowStart, '2021-01-01');
-assertStr('Window end',   t3.windowEnd,   '2024-01-01');
+assert("High-3 average", t3.high3Average, 83333, 1);
+assertStr("Window start", t3.windowStart, "2021-01-01");
+assertStr("Window end", t3.windowEnd, "2024-01-01");
 
 // ---------------------------------------------------------------------------
 // Test 4: Falling salary — highest window is the FIRST 3 years
 // ---------------------------------------------------------------------------
-console.log('\n── Test 4: Falling salary — should pick first 36 months ────────');
+console.log(
+  "\n── Test 4: Falling salary — should pick first 36 months ────────",
+);
 // 2020-01-01 to 2022-01-01: $90,000  (24 months)
 // 2022-01-01 to 2024-01-01: $70,000  (24 months)
 // Best window: 2020-01-01 → 2023-01-01
@@ -189,17 +246,19 @@ console.log('\n── Test 4: Falling salary — should pick first 36 months ─
 //   = (180000 + 70000) / 3 = $83,333.33
 
 const t4 = calculateHigh3([
-  { startDate: '2020-01-01', endDate: '2022-01-01', annualSalary: 90000 },
-  { startDate: '2022-01-01', endDate: '2024-01-01', annualSalary: 70000 },
+  { startDate: "2020-01-01", endDate: "2022-01-01", annualSalary: 90000 },
+  { startDate: "2022-01-01", endDate: "2024-01-01", annualSalary: 70000 },
 ]);
-assert('High-3 average', t4.high3Average, 83333, 1);
-assertStr('Window start', t4.windowStart, '2020-01-01');
-assertStr('Window end',   t4.windowEnd,   '2023-01-01');
+assert("High-3 average", t4.high3Average, 83333, 1);
+assertStr("Window start", t4.windowStart, "2020-01-01");
+assertStr("Window end", t4.windowEnd, "2023-01-01");
 
 // ---------------------------------------------------------------------------
 // Test 5: Mid-career spike — window should center on the spike
 // ---------------------------------------------------------------------------
-console.log('\n── Test 5: Mid-career spike ─────────────────────────────────────');
+console.log(
+  "\n── Test 5: Mid-career spike ─────────────────────────────────────",
+);
 // 2019-01-01 to 2021-01-01: $70,000  (24 months)
 // 2021-01-01 to 2022-01-01: $110,000 (12 months)
 // 2022-01-01 to 2024-01-01: $80,000  (24 months)
@@ -219,32 +278,36 @@ console.log('\n── Test 5: Mid-career spike ───────────
 //   High-3 = 270000/3 = $90,000  ← BEST
 
 const t5 = calculateHigh3([
-  { startDate: '2019-01-01', endDate: '2021-01-01', annualSalary: 70000  },
-  { startDate: '2021-01-01', endDate: '2022-01-01', annualSalary: 110000 },
-  { startDate: '2022-01-01', endDate: '2024-01-01', annualSalary: 80000  },
+  { startDate: "2019-01-01", endDate: "2021-01-01", annualSalary: 70000 },
+  { startDate: "2021-01-01", endDate: "2022-01-01", annualSalary: 110000 },
+  { startDate: "2022-01-01", endDate: "2024-01-01", annualSalary: 80000 },
 ]);
-assert('High-3 average', t5.high3Average, 90000, 1);
-assertStr('Window start', t5.windowStart, '2021-01-01');
-assertStr('Window end',   t5.windowEnd,   '2024-01-01');
+assert("High-3 average", t5.high3Average, 90000, 1);
+assertStr("Window start", t5.windowStart, "2021-01-01");
+assertStr("Window end", t5.windowEnd, "2024-01-01");
 
 // ---------------------------------------------------------------------------
 // Test 6: Partial service — less than 36 months
 // ---------------------------------------------------------------------------
-console.log('\n── Test 6: Partial period — only 18 months of service ───────────');
+console.log(
+  "\n── Test 6: Partial period — only 18 months of service ───────────",
+);
 // 2023-01-01 to 2024-07-01: $85,000 (18 months = 540 OPM days)
 // High-3 uses all available days
 // High-3 = $85,000
 
 const t6 = calculateHigh3([
-  { startDate: '2023-01-01', endDate: '2024-07-01', annualSalary: 85000 }
+  { startDate: "2023-01-01", endDate: "2024-07-01", annualSalary: 85000 },
 ]);
-assert('High-3 average', t6.high3Average, 85000, 1);
-assert('isPartialPeriod = true', t6.isPartialPeriod ? 1 : 0, 1, 0);
+assert("High-3 average", t6.high3Average, 85000, 1);
+assert("isPartialPeriod = true", t6.isPartialPeriod ? 1 : 0, 1, 0);
 
 // ---------------------------------------------------------------------------
 // Test 7: Realistic FERS career — multiple promotions
 // ---------------------------------------------------------------------------
-console.log('\n── Test 7: Realistic career — 4 promotions over 10 years ───────');
+console.log(
+  "\n── Test 7: Realistic career — 4 promotions over 10 years ───────",
+);
 // GS-9  Step 1: 2015-06-01 → 2017-06-01  $52,000   (24 months)
 // GS-11 Step 1: 2017-06-01 → 2019-06-01  $63,000   (24 months)
 // GS-12 Step 1: 2019-06-01 → 2021-06-01  $75,000   (24 months)
@@ -257,24 +320,28 @@ console.log('\n── Test 7: Realistic career — 4 promotions over 10 years �
 // High-3 = 275000/3 = $91,667
 
 const t7 = calculateHigh3([
-  { startDate: '2015-06-01', endDate: '2017-06-01', annualSalary: 52000 },
-  { startDate: '2017-06-01', endDate: '2019-06-01', annualSalary: 63000 },
-  { startDate: '2019-06-01', endDate: '2021-06-01', annualSalary: 75000 },
-  { startDate: '2021-06-01', endDate: '2024-06-01', annualSalary: 89000 },
-  { startDate: '2024-06-01', endDate: '2025-06-01', annualSalary: 97000 },
+  { startDate: "2015-06-01", endDate: "2017-06-01", annualSalary: 52000 },
+  { startDate: "2017-06-01", endDate: "2019-06-01", annualSalary: 63000 },
+  { startDate: "2019-06-01", endDate: "2021-06-01", annualSalary: 75000 },
+  { startDate: "2021-06-01", endDate: "2024-06-01", annualSalary: 89000 },
+  { startDate: "2024-06-01", endDate: "2025-06-01", annualSalary: 97000 },
 ]);
-assert('High-3 average', t7.high3Average, 91667, 1);
-assertStr('Window start', t7.windowStart, '2022-06-01');
-assertStr('Window end',   t7.windowEnd,   '2025-06-01');
-console.log('  Contributions:');
+assert("High-3 average", t7.high3Average, 91667, 1);
+assertStr("Window start", t7.windowStart, "2022-06-01");
+assertStr("Window end", t7.windowEnd, "2025-06-01");
+console.log("  Contributions:");
 for (const c of t7.contributions) {
-  console.log(`    ${c.startDate} → ${c.endDate}: $${c.annualSalary.toLocaleString()}/yr × ${c.opmDays} days = $${c.dollarContribution.toLocaleString()}`);
+  console.log(
+    `    ${c.startDate} → ${c.endDate}: $${c.annualSalary.toLocaleString()}/yr × ${c.opmDays} days = $${c.dollarContribution.toLocaleString()}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Test 8: Mid-month promotion (proration)
 // ---------------------------------------------------------------------------
-console.log('\n── Test 8: Mid-month promotion proration ────────────────────────');
+console.log(
+  "\n── Test 8: Mid-month promotion proration ────────────────────────",
+);
 // Promoted on June 15, 2022 from $80,000 to $90,000
 // Full 3-year window: 2022-01-01 → 2025-01-01
 // Jan 1 → Jun 15: toOPMDay("2022-06-15") - toOPMDay("2022-01-01")
@@ -284,23 +351,107 @@ console.log('\n── Test 8: Mid-month promotion proration ──────�
 // High-3 = 265444 × 360 / 1080 = 88481.33
 
 const t8 = calculateHigh3([
-  { startDate: '2022-01-01', endDate: '2022-06-15', annualSalary: 80000 },
-  { startDate: '2022-06-15', endDate: '2025-01-01', annualSalary: 90000 },
+  { startDate: "2022-01-01", endDate: "2022-06-15", annualSalary: 80000 },
+  { startDate: "2022-06-15", endDate: "2025-01-01", annualSalary: 90000 },
 ]);
 // Expected: window 2022-01-01 → 2025-01-01
 // 164 days @ $80k + 916 days @ $90k
-const expected8 = (164 * (80000/360) + 916 * (90000/360)) * 360 / 1080;
-assert('High-3 average', t8.high3Average, Math.round(expected8 * 100) / 100, 1);
-assertStr('Window start', t8.windowStart, '2022-01-01');
+const expected8 = ((164 * (80000 / 360) + 916 * (90000 / 360)) * 360) / 1080;
+assert("High-3 average", t8.high3Average, Math.round(expected8 * 100) / 100, 1);
+assertStr("Window start", t8.windowStart, "2022-01-01");
+
+// ---------------------------------------------------------------------------
+// Test 9: Year boundary splitting — the key fix
+// ---------------------------------------------------------------------------
+console.log(
+  "\n── Test 9: Year boundary splitting ──────────────────────────────",
+);
+
+// GS-14 from June 3, 2023 to July 24, 2024
+// Must split into TWO sub-periods at Jan 1, 2024
+const split1 = splitAtYearBoundaries("2023-06-03", "2024-07-24");
+assert("Splits into 2 sub-periods", split1.length, 2, 0);
+assertStr("Sub-period 1 start", split1[0].startDate, "2023-06-03");
+assertStr("Sub-period 1 end", split1[0].endDate, "2024-01-01");
+assert("Sub-period 1 pay year", split1[0].payYear, 2023, 0);
+assertStr("Sub-period 2 start", split1[1].startDate, "2024-01-01");
+assertStr("Sub-period 2 end", split1[1].endDate, "2024-07-24");
+assert("Sub-period 2 pay year", split1[1].payYear, 2024, 0);
+
+// Period entirely within one year — should NOT split
+const split2 = splitAtYearBoundaries("2023-03-01", "2023-11-15");
+assert("Single-year period = 1 sub-period", split2.length, 1, 0);
+assert("Pay year correct", split2[0].payYear, 2023, 0);
+
+// Period spanning 3 years
+// 2021-09-01 to 2024-03-15 touches 4 calendar years → 4 sub-periods
+const split3 = splitAtYearBoundaries("2021-09-01", "2024-03-15");
+assert("4-year span = 4 sub-periods", split3.length, 4, 0);
+assert("Year 1 (2021)", split3[0].payYear, 2021, 0);
+assert("Year 2 (2022)", split3[1].payYear, 2022, 0);
+assert("Year 3 (2023)", split3[2].payYear, 2023, 0);
+assert("Year 4 (2024)", split3[3].payYear, 2024, 0);
+assertStr("2021 seg start", split3[0].startDate, "2021-09-01");
+assertStr("2021 seg end", split3[0].endDate, "2022-01-01");
+assertStr("2024 seg start", split3[3].startDate, "2024-01-01");
+assertStr("Last sub-period ends at endDate", split3[3].endDate, "2024-03-15");
+
+// Period ending exactly on Jan 1 — the Jan 1 year should NOT appear as a segment
+const split4 = splitAtYearBoundaries("2023-06-01", "2024-01-01");
+assert("Ends on Jan 1 = 1 sub-period only", split4.length, 1, 0);
+assert("Only uses 2023 table", split4[0].payYear, 2023, 0);
+
+// Clamping: date before first available year uses FIRST_PAY_YEAR
+const split5 = splitAtYearBoundaries("2010-01-01", "2010-12-31");
+assert("Pre-2016 clamped to 2016", split5[0].payYear, FIRST_PAY_YEAR, 0);
+
+console.log(
+  "\n── Test 10: Year-split High-3 calculation ───────────────────────",
+);
+// Simulate what the system does for GS-14 June 2023 → July 2024
+// with hypothetical salaries: $120,000 in 2023, $124,000 in 2024
+//
+// After splitting:
+//   2023-06-03 → 2024-01-01:  OPM days = (2024×360+0) - (2023×360+5×30+3)
+//                                       = 728640 - 728073 = 567 days @ $120,000
+//   2024-01-01 → 2024-07-24:  OPM days = (2024×360+6×30+24) - (2024×360+0)
+//                                       = 728640+204 - 728640 = 204 days @ $124,000
+//   Total = 771 OPM days (partial period)
+//   High-3 = (567×(120000/360) + 204×(124000/360)) × 360 / 771
+
+const days2023 = toOPMDay("2024-01-01") - toOPMDay("2023-06-03"); // 567
+const days2024 = toOPMDay("2024-07-24") - toOPMDay("2024-01-01"); // 204
+const earned = days2023 * (120000 / 360) + days2024 * (124000 / 360);
+const totalDays = days2023 + days2024;
+const expectedHigh3 = Math.round(((earned * 360) / totalDays) * 100) / 100;
+
+console.log(`     2023 portion: ${days2023} OPM days @ $120,000`);
+console.log(`     2024 portion: ${days2024} OPM days @ $124,000`);
+console.log(`     Expected High-3: $${expectedHigh3.toLocaleString()}`);
+
+const t10 = calculateHigh3([
+  { startDate: "2023-06-03", endDate: "2024-01-01", annualSalary: 120000 },
+  { startDate: "2024-01-01", endDate: "2024-07-24", annualSalary: 124000 },
+]);
+assert("High-3 matches expected", t10.high3Average, expectedHigh3, 1);
+assert("isPartialPeriod (< 36 months)", t10.isPartialPeriod ? 1 : 0, 1, 0);
+console.log("  Contributions:");
+for (const c of t10.contributions) {
+  console.log(
+    `    ${c.startDate} → ${c.endDate}: $${c.annualSalary.toLocaleString()}/yr × ${c.opmDays} OPM days`,
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(60)}`);
-console.log(`Results: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`);
+console.log(`\n${"─".repeat(60)}`);
+console.log(
+  `Results: ${passed} passed, ${failed} failed out of ${passed + failed} assertions`,
+);
 if (failed > 0) {
-  console.log('\n⚠️  Fix the failing tests before building the UI.\n');
+  console.log("\n⚠️  Fix the failing tests before building the UI.\n");
   process.exit(1);
 } else {
-  console.log('\n✅  All tests passed — calculation logic is correct.\n');
+  console.log("\n✅  All tests passed — calculation logic is correct.\n");
 }

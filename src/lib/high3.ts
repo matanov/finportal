@@ -271,6 +271,40 @@ function payYearFromDate(effectiveDate: string): number {
   return clampPayYear(parseInt(effectiveDate.split("-")[0], 10));
 }
 
+/**
+ * Split a date range at every January 1 boundary so each sub-period
+ * uses the correct pay table for that calendar year.
+ *
+ * Example: "2023-06-03" → "2024-07-24" becomes:
+ *   { start: "2023-06-03", end: "2024-01-01", payYear: 2023 }
+ *   { start: "2024-01-01", end: "2024-07-24", payYear: 2024 }
+ */
+function splitAtYearBoundaries(
+  startDate: string,
+  endDate: string,
+): Array<{ startDate: string; endDate: string; payYear: number }> {
+  const startYear = parseInt(startDate.split("-")[0], 10);
+  const endYear = parseInt(endDate.split("-")[0], 10);
+  const result: Array<{ startDate: string; endDate: string; payYear: number }> =
+    [];
+
+  for (let year = startYear; year <= endYear; year++) {
+    const segStart = year === startYear ? startDate : `${year}-01-01`;
+    const segEnd = year === endYear ? endDate : `${year + 1}-01-01`;
+
+    // Skip zero-length segments (e.g. period ends exactly on Jan 1)
+    if (segStart >= segEnd) continue;
+
+    result.push({
+      startDate: segStart,
+      endDate: segEnd,
+      payYear: clampPayYear(year),
+    });
+  }
+
+  return result;
+}
+
 export interface CareerStep {
   /** Date this grade/step/locality became effective (YYYY-MM-DD) */
   effectiveDate: string;
@@ -303,42 +337,58 @@ export async function careerStepsToServicePeriods(
     (a, b) => toOPMDay(a.effectiveDate) - toOPMDay(b.effectiveDate),
   );
 
-  // Derive pay year from each step's effective date, clamp to available range
-  // Prefetch all unique years in parallel — one network round-trip total
-  const uniqueYears = [
-    ...new Set(sorted.map((s) => payYearFromDate(s.effectiveDate))),
-  ];
+  // Build raw periods (one per career step entry)
+  const rawPeriods = sorted.map((s, i) => ({
+    startDate: s.effectiveDate,
+    endDate:
+      i < sorted.length - 1 ? sorted[i + 1].effectiveDate : separationDate,
+    grade: s.grade,
+    step: s.step,
+    locality: s.locality,
+  }));
+
+  // Split every raw period at Jan 1 boundaries so each sub-period uses
+  // the correct pay table for that calendar year.
+  // e.g. GS-14 from 2023-06-03 to 2024-07-24 becomes two sub-periods:
+  //   2023-06-03 → 2024-01-01  (2023 table)
+  //   2024-01-01 → 2024-07-24  (2024 table)
+  const splitPeriods = rawPeriods.flatMap((raw) =>
+    splitAtYearBoundaries(raw.startDate, raw.endDate).map((seg) => ({
+      ...raw,
+      startDate: seg.startDate,
+      endDate: seg.endDate,
+      payYear: seg.payYear,
+    })),
+  );
+
+  // Prefetch all unique pay years in parallel — one network round-trip total
+  const uniqueYears = [...new Set(splitPeriods.map((s) => s.payYear))];
   await prefetchYears(uniqueYears);
 
   const periods: ServicePeriod[] = [];
 
-  for (let i = 0; i < sorted.length; i++) {
-    const step = sorted[i];
-    const endDate =
-      i < sorted.length - 1 ? sorted[i + 1].effectiveDate : separationDate;
-
-    // Cache is warm after prefetchYears — this await resolves instantly
-    const payYear = payYearFromDate(step.effectiveDate);
+  for (const sp of splitPeriods) {
+    // Cache is warm — this await resolves instantly
     const salary = await lookupSalary(
-      payYear,
-      step.locality,
-      step.grade,
-      step.step,
+      sp.payYear,
+      sp.locality,
+      sp.grade,
+      sp.step,
     );
     if (salary === null) {
       return {
-        error: `No salary found for year=${payYearFromDate(step.effectiveDate)}, locality=${step.locality}, grade=${step.grade}, step=${step.step}`,
+        error: `No salary found for year=${sp.payYear}, locality=${sp.locality}, grade=${sp.grade}, step=${sp.step}`,
       };
     }
 
     periods.push({
-      startDate: step.effectiveDate,
-      endDate,
+      startDate: sp.startDate,
+      endDate: sp.endDate,
       annualSalary: salary,
-      grade: step.grade,
-      step: step.step,
-      locality: step.locality,
-      year: payYearFromDate(step.effectiveDate),
+      grade: sp.grade,
+      step: sp.step,
+      locality: sp.locality,
+      year: sp.payYear,
     });
   }
 
