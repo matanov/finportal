@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SalaryLookup from '../../components/SalaryLookup';
+---
+
+<Layout
+  title="GS Salary History Lookup | FersMath"
+  description="Look up General Schedule pay by grade, step, and locality area across every available year, with a growth chart showing how the salary has changed over time."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 960px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>Salary History Lookup</span>
+      </nav>
+
+      <!-- React calculator — client:load so it hydrates immediately -->
+      <SalaryLookup client:load />
+
+    </div>
+  </main>
+</Layout>
