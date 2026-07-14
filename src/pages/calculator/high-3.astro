@@ -1,0 +1,43 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import High3Calculator from '../../components/High3Calculator';
+---
+
+<Layout
+  title="High-3 Average Salary Calculator | FersMath"
+  description="Calculate your FERS High-3 average salary using OPM's 360-day year rule. Enter your GS grade, step, and locality history to find your highest 36-month window."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 960px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>High-3 Calculator</span>
+      </nav>
+
+      <!-- OPM Rules notice -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem;
+                  padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+        <strong>OPM Compliance:</strong> This calculator uses the 360-day year (30 days/month),
+        finds the <em>highest</em> 36 consecutive months — not the last 36 — and prorates
+        partial months exactly per OPM FERS Handbook Chapter 50.
+      </div>
+
+      <!-- React calculator — client:load so it hydrates immediately -->
+      <High3Calculator client:load />
+
+      <!-- Disclaimer -->
+      <div style="margin-top: 2rem; padding: 1rem 1.25rem; background: #fff;
+                  border: 1px solid #e2e8f0; border-radius: 0.75rem;
+                  font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+        <strong style="color: #64748b;">Disclaimer:</strong> This tool is for educational
+        purposes only. Results are estimates based on published GS pay tables and OPM rules.
+        Always verify your High-3 with your agency HR office or OPM directly before making
+        retirement decisions.
+      </div>
+
+    </div>
+  </main>
+</Layout>
