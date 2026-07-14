@@ -22,6 +22,16 @@ const LOCALITY_OPTIONS = Object.entries(localityData as Record<string, string>)
 const GRADES = Array.from({ length: 15 }, (_, i) => i + 1);
 const STEPS = Array.from({ length: 10 }, (_, i) => i + 1);
 
+/** Today's date in YYYY-MM-DD local time — used as separation date fallback */
+function todayLocalISO(): string {
+  const d = new Date();
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 const DEFAULT_STEP: CareerStep = {
   effectiveDate: "",
   grade: 7,
@@ -557,14 +567,13 @@ export default function High3Calculator() {
   const [steps, setSteps] = useState<CareerStep[]>([{ ...DEFAULT_STEP }]);
   const [separationDate, setSeparationDate] = useState("");
 
-  // Set today's date client-side after hydration, using local timezone
+  // Populate the date input after hydration so the browser shows the real value
   useEffect(() => {
-    const d = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    setSeparationDate(
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-    );
+    setSeparationDate((prev) => prev || todayLocalISO());
   }, []);
+
+  // Always have a valid date — fall back to today if the field is empty
+  const effectiveSeparationDate = separationDate || todayLocalISO();
   const [state, setState] = useState<CalcState>("idle");
   const [result, setResult] = useState<High3Result | null>(null);
   const [error, setError] = useState("");
@@ -588,9 +597,6 @@ export default function High3Calculator() {
   }, []);
 
   const validate = (): string | null => {
-    if (!separationDate)
-      return "Please enter your separation (or current) date.";
-
     for (let i = 0; i < steps.length; i++) {
       if (!steps[i].effectiveDate)
         return `Row ${i + 1}: effective date is required.`;
@@ -607,12 +613,11 @@ export default function High3Calculator() {
         return `Two rows share the same effective date (${sorted[i].effectiveDate}). Each row must have a unique date.`;
     }
 
-    // First effective date must be before separation date
-    if (sorted[0].effectiveDate >= separationDate)
-      return `Your first effective date (${sorted[0].effectiveDate}) must be before the separation date (${separationDate}).`;
+    // Effective dates must be before separation date
+    if (sorted[0].effectiveDate >= effectiveSeparationDate)
+      return `Your first effective date (${sorted[0].effectiveDate}) must be before the separation date (${effectiveSeparationDate}).`;
 
-    // Last effective date must be before separation date
-    if (sorted[sorted.length - 1].effectiveDate >= separationDate)
+    if (sorted[sorted.length - 1].effectiveDate >= effectiveSeparationDate)
       return `Effective date ${sorted[sorted.length - 1].effectiveDate} is on or after the separation date.`;
 
     return null;
@@ -630,7 +635,10 @@ export default function High3Calculator() {
     setResult(null);
 
     try {
-      const periods = await careerStepsToServicePeriods(steps, separationDate);
+      const periods = await careerStepsToServicePeriods(
+        steps,
+        effectiveSeparationDate,
+      );
       if ("error" in periods) {
         setError(periods.error);
         setState("error");
@@ -697,7 +705,17 @@ export default function High3Calculator() {
             type="date"
             value={separationDate}
             onChange={setSeparationDate}
+            placeholder={todayLocalISO()}
           />
+          <div
+            style={{
+              fontSize: "0.75rem",
+              color: "#94a3b8",
+              marginTop: "0.3rem",
+            }}
+          >
+            Defaults to today if left blank
+          </div>
         </div>
       </div>
 
