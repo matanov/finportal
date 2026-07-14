@@ -5,7 +5,7 @@
  * Fetches only the pay years needed for the user's career history.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { careerStepsToServicePeriods, calculateHigh3 } from "../lib/high3";
 import type { CareerStep, High3Result } from "../lib/high3";
 import localityData from "../data/localitycode-localityarea.json";
@@ -555,9 +555,16 @@ function ResultsPanel({ result }: { result: High3Result }) {
 
 export default function High3Calculator() {
   const [steps, setSteps] = useState<CareerStep[]>([{ ...DEFAULT_STEP }]);
-  const [separationDate, setSeparationDate] = useState(
-    () => new Date().toISOString().split("T")[0],
-  );
+  const [separationDate, setSeparationDate] = useState("");
+
+  // Set today's date client-side after hydration, using local timezone
+  useEffect(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    setSeparationDate(
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    );
+  }, []);
   const [state, setState] = useState<CalcState>("idle");
   const [result, setResult] = useState<High3Result | null>(null);
   const [error, setError] = useState("");
