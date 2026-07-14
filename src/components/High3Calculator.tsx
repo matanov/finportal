@@ -174,7 +174,7 @@ function CareerRow({
         display: "grid",
         gridTemplateColumns: "200px 80px 70px 1fr 36px",
         gap: "0.5rem",
-        alignItems: "end",
+        alignItems: "start",
         padding: "0.75rem",
         background: index % 2 === 0 ? "#f8fafc" : "#fff",
         borderRadius: "0.5rem",
@@ -250,7 +250,14 @@ function CareerRow({
       </div>
 
       {/* Remove button */}
-      <div style={{ display: "flex", alignItems: "flex-end" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          alignSelf: "stretch",
+          paddingTop: "1.4rem",
+        }}
+      >
         <button
           onClick={() => onRemove(index)}
           disabled={total <= 1}
