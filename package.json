@@ -6,6 +6,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "generate:pay": "node scripts/build-pay-lookup.mjs",
+    "prebuild": "node scripts/build-pay-lookup.mjs",
+    "predev": "node scripts/build-pay-lookup.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

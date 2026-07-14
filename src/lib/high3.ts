@@ -69,7 +69,7 @@ export interface High3Result {
  * February is NOT special — OPM does not adjust for short months.
  */
 export function toOPMDay(dateStr: string): number {
-  const [year, month, day] = dateStr.split('-').map(Number);
+  const [year, month, day] = dateStr.split("-").map(Number);
   return year * 360 + (month - 1) * 30 + Math.min(day, 30);
 }
 
@@ -90,7 +90,7 @@ export function fromOPMDay(opmDay: number): string {
   const month = Math.floor((remaining - 1) / 30) + 1;
   const day = ((remaining - 1) % 30) + 1;
 
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 /**
@@ -114,7 +114,7 @@ export function addOPMDays(dateStr: string, days: number): string {
 /** Flat numeric segment used internally for sliding-window calculation */
 interface Segment {
   start: number; // OPM day (inclusive)
-  end: number;   // OPM day (exclusive)
+  end: number; // OPM day (exclusive)
   annualSalary: number;
   dailyRate: number; // annualSalary / 360
 }
@@ -138,7 +138,7 @@ function buildSegments(periods: ServicePeriod[]): Segment[] {
 function earnedInWindow(
   segments: Segment[],
   wStart: number,
-  windowDays: number
+  windowDays: number,
 ): number {
   const wEnd = wStart + windowDays;
   let total = 0;
@@ -216,7 +216,8 @@ export function calculateHigh3(periods: ServicePeriod[]): High3Result | null {
   // High-3 average = total dollars earned ÷ (window days ÷ 360)
   //                = bestEarned × 360 ÷ windowDays
   // When windowDays = 1080: high3 = bestEarned / 3
-  const high3Average = Math.round((bestEarned * 360) / windowDays * 100) / 100;
+  const high3Average =
+    Math.round(((bestEarned * 360) / windowDays) * 100) / 100;
 
   // Build contribution breakdown for the winning window
   const wStart = bestWindowStart;
@@ -253,7 +254,7 @@ export function calculateHigh3(periods: ServicePeriod[]): High3Result | null {
 // Convenience: build ServicePeriods from grade/step/locality history
 // ---------------------------------------------------------------------------
 
-import { lookupSalary } from './payLookup';
+import { lookupSalary, prefetchYears } from "./payLookup";
 
 export interface CareerStep {
   /** Date this grade/step/locality became effective (YYYY-MM-DD) */
@@ -270,27 +271,42 @@ export interface CareerStep {
  * Convert a career history (list of grade/step changes) into ServicePeriods
  * ready for calculateHigh3().
  *
- * @param steps         - Ordered list of career steps (sorted by effectiveDate)
- * @param separationDate - Last day of federal service (exclusive end date)
- * @returns Array of ServicePeriod, or an error string if any salary lookup fails
+ * Fetches only the pay years actually used in the career history.
+ * Parallel prefetch ensures a single network round-trip per unique year.
+ *
+ * @param steps          - Ordered list of career steps (sorted by effectiveDate)
+ * @param separationDate - First day NOT in federal service (exclusive end date)
+ * @returns Array of ServicePeriod, or an object with an error string
  */
-export function careerStepsToServicePeriods(
+export async function careerStepsToServicePeriods(
   steps: CareerStep[],
-  separationDate: string
-): ServicePeriod[] | { error: string } {
-  if (!steps || steps.length === 0) return { error: 'No career steps provided.' };
+  separationDate: string,
+): Promise<ServicePeriod[] | { error: string }> {
+  if (!steps || steps.length === 0)
+    return { error: "No career steps provided." };
 
   const sorted = [...steps].sort(
-    (a, b) => toOPMDay(a.effectiveDate) - toOPMDay(b.effectiveDate)
+    (a, b) => toOPMDay(a.effectiveDate) - toOPMDay(b.effectiveDate),
   );
+
+  // Prefetch all unique years in parallel — one network round-trip total
+  const uniqueYears = [...new Set(sorted.map((s) => s.payYear))];
+  await prefetchYears(uniqueYears);
 
   const periods: ServicePeriod[] = [];
 
   for (let i = 0; i < sorted.length; i++) {
     const step = sorted[i];
-    const endDate = i < sorted.length - 1 ? sorted[i + 1].effectiveDate : separationDate;
+    const endDate =
+      i < sorted.length - 1 ? sorted[i + 1].effectiveDate : separationDate;
 
-    const salary = lookupSalary(step.payYear, step.locality, step.grade, step.step);
+    // Cache is warm after prefetchYears — this await resolves instantly
+    const salary = await lookupSalary(
+      step.payYear,
+      step.locality,
+      step.grade,
+      step.step,
+    );
     if (salary === null) {
       return {
         error: `No salary found for year=${step.payYear}, locality=${step.locality}, grade=${step.grade}, step=${step.step}`,

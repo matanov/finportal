@@ -1,95 +1,113 @@
 /**
  * payLookup.ts
  *
- * Utility to look up a GS annual salary from the pay scale JSON files.
- * Handles the inconsistent root keys across years (ALL_GS, ALL GS, 2018).
- * All pay data is imported at build time — zero runtime fetching.
+ * On-demand GS salary lookup using pre-built compact JSON files
+ * served from /public/pay-scales/.
+ *
+ * Files are fetched once per year and cached in memory for the session.
+ * The JS bundle stays at zero pay-data weight.
+ *
+ * TO ADD A NEW YEAR:
+ *   1. Drop YYYY-general-schedule-pay-rates.json into src/data/pay-scales/
+ *   2. Run `npm run build` — the prebuild script does the rest automatically.
  */
 
-import data2016 from '../data/pay-scales/2016-general-schedule-pay-rates.json';
-import data2017 from '../data/pay-scales/2017-general-schedule-pay-rates.json';
-import data2018 from '../data/pay-scales/2018-general-schedule-pay-rates.json';
-import data2019 from '../data/pay-scales/2019-general-schedule-pay-rates.json';
-import data2020 from '../data/pay-scales/2020-general-schedule-pay-rates.json';
-import data2021 from '../data/pay-scales/2021-general-schedule-pay-rates.json';
-import data2022 from '../data/pay-scales/2022-general-schedule-pay-rates.json';
-import data2023 from '../data/pay-scales/2023-general-schedule-pay-rates.json';
-import data2024 from '../data/pay-scales/2024-general-schedule-pay-rates.json';
-import data2025 from '../data/pay-scales/2025-general-schedule-pay-rates.json';
-import data2026 from '../data/pay-scales/2026-general-schedule-pay-rates.json';
+// ---------------------------------------------------------------------------
+// In-memory cache — fetched files are stored here for the session lifetime
+// ---------------------------------------------------------------------------
 
-export interface PayEntry {
-  location: string;
-  grade: number;
-  steps: { step: number; annual: number }[];
+/** Compact lookup map: "LOCALITY:GRADE:STEP" → annual salary */
+type YearMap = Record<string, number>;
+
+const yearCache = new Map<number, YearMap>();
+let yearsIndex: number[] | null = null;
+
+// ---------------------------------------------------------------------------
+// Internal fetch helpers
+// ---------------------------------------------------------------------------
+
+async function fetchYearMap(year: number): Promise<YearMap> {
+  if (yearCache.has(year)) return yearCache.get(year)!;
+
+  const res = await fetch(`/pay-scales/${year}.json`);
+  if (!res.ok) throw new Error(`Pay data not available for year ${year}`);
+
+  const data: YearMap = await res.json();
+  yearCache.set(year, data);
+  return data;
 }
 
-// Normalise any JSON file regardless of its root key
-function extractEntries(raw: Record<string, unknown>): PayEntry[] {
-  const key = Object.keys(raw)[0];
-  return (raw[key] as PayEntry[]) ?? [];
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the list of available pay years from the index.
+ * Fetched once and cached.
+ */
+export async function getAvailableYears(): Promise<number[]> {
+  if (yearsIndex) return yearsIndex;
+
+  const res = await fetch("/pay-scales/index.json");
+  if (!res.ok) throw new Error("Could not load pay scale index");
+
+  const data: { years: number[] } = await res.json();
+  yearsIndex = data.years;
+  return yearsIndex;
 }
-
-const PAY_TABLES: Record<number, PayEntry[]> = {
-  2016: extractEntries(data2016 as Record<string, unknown>),
-  2017: extractEntries(data2017 as Record<string, unknown>),
-  2018: extractEntries(data2018 as Record<string, unknown>),
-  2019: extractEntries(data2019 as Record<string, unknown>),
-  2020: extractEntries(data2020 as Record<string, unknown>),
-  2021: extractEntries(data2021 as Record<string, unknown>),
-  2022: extractEntries(data2022 as Record<string, unknown>),
-  2023: extractEntries(data2023 as Record<string, unknown>),
-  2024: extractEntries(data2024 as Record<string, unknown>),
-  2025: extractEntries(data2025 as Record<string, unknown>),
-  2026: extractEntries(data2026 as Record<string, unknown>),
-};
-
-export const AVAILABLE_YEARS = Object.keys(PAY_TABLES).map(Number).sort();
 
 /**
  * Look up an annual GS salary.
  *
  * @param year     - The pay year (e.g. 2024)
- * @param location - Locality code from the dictionary (e.g. "DCB", "GS" for rest-of-US)
+ * @param locality - Locality code (e.g. "DCB", "GS" for rest-of-US)
  * @param grade    - GS grade 1–15
  * @param step     - GS step 1–10
  * @returns Annual salary in dollars, or null if not found
  */
-export function lookupSalary(
+export async function lookupSalary(
   year: number,
-  location: string,
+  locality: string,
   grade: number,
-  step: number
-): number | null {
-  const table = PAY_TABLES[year];
-  if (!table) return null;
-
-  const entry = table.find(
-    (e) => e.location === location && e.grade === grade
-  );
-  if (!entry) return null;
-
-  const stepEntry = entry.steps.find((s) => s.step === step);
-  return stepEntry?.annual ?? null;
+  step: number,
+): Promise<number | null> {
+  const map = await fetchYearMap(year);
+  return map[`${locality}:${grade}:${step}`] ?? null;
 }
 
 /**
- * Returns all available locality codes for a given year.
+ * Pre-fetches multiple years in parallel.
+ * Call this once you know which years a user's career spans
+ * so all data is ready before the calculation runs.
  */
-export function getLocalities(year: number): string[] {
-  const table = PAY_TABLES[year];
-  if (!table) return [];
-  return [...new Set(table.map((e) => e.location))].sort();
+export async function prefetchYears(years: number[]): Promise<void> {
+  await Promise.all(years.map(fetchYearMap));
 }
 
 /**
- * Returns all grades available for a given year + locality.
+ * Returns all locality codes available for a given year.
  */
-export function getGrades(year: number, location: string): number[] {
-  const table = PAY_TABLES[year];
-  if (!table) return [];
-  return table
-    .filter((e) => e.location === location)
-    .map((e) => e.grade)
-    .sort((a, b) => a - b);
+export async function getLocalities(year: number): Promise<string[]> {
+  const map = await fetchYearMap(year);
+  const locs = new Set<string>();
+  for (const key of Object.keys(map)) {
+    locs.add(key.split(":")[0]);
+  }
+  return [...locs].sort();
+}
+
+/**
+ * Returns all GS grades available for a given year + locality.
+ */
+export async function getGrades(
+  year: number,
+  locality: string,
+): Promise<number[]> {
+  const map = await fetchYearMap(year);
+  const grades = new Set<number>();
+  for (const key of Object.keys(map)) {
+    const [loc, grade] = key.split(":");
+    if (loc === locality) grades.add(Number(grade));
+  }
+  return [...grades].sort((a, b) => a - b);
 }
