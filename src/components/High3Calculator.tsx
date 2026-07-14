@@ -555,7 +555,9 @@ function ResultsPanel({ result }: { result: High3Result }) {
 
 export default function High3Calculator() {
   const [steps, setSteps] = useState<CareerStep[]>([{ ...DEFAULT_STEP }]);
-  const [separationDate, setSeparationDate] = useState("");
+  const [separationDate, setSeparationDate] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
   const [state, setState] = useState<CalcState>("idle");
   const [result, setResult] = useState<High3Result | null>(null);
   const [error, setError] = useState("");
