@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="About | FersMath"
+  description="Why I built FersMath — a free, accurate FERS retirement calculator for federal employees."
+>
+
+  <!-- Minimal nav -->
+  <header style="border-bottom: 1px solid #e2e8f0; padding: 0 1.5rem;">
+    <div style="max-width: 640px; margin: 0 auto; height: 3.5rem; display: flex; align-items: center; justify-content: space-between;">
+      <a href="/" style="font-weight: 700; color: #0F2244; text-decoration: none; font-size: 0.95rem;">← FersMath</a>
+      <a href="/calculator/high-3" style="font-size: 0.875rem; color: #2A7D9C; text-decoration: none; font-weight: 500;">High-3 Calculator</a>
+    </div>
+  </header>
+
+  <main style="max-width: 640px; margin: 0 auto; padding: 4rem 1.5rem 6rem;">
+
+    <h1 style="font-size: 1.75rem; font-weight: 800; color: #0F2244; margin: 0 0 2.5rem; line-height: 1.2;">About this site</h1>
+
+    <p style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;">
+      I'm a federal employee. When I started trying to understand my own retirement,
+      I couldn't find a single calculator that did the math correctly.
+    </p>
+
+    <p style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;">
+      Most tools either ask you to enter a single salary — ignoring that your pay
+      changes every year — or they round off the date arithmetic in ways that
+      don't match what OPM actually does. The High-3 calculation in particular
+      has real nuance: a 360-day year, 30-day months, a sliding window that finds
+      your <em>highest</em> 36 months (not your last 36), and a pay table that
+      rolls over every January 1st. Get any of that wrong and the number is off.
+    </p>
+
+    <p style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;">
+      So I built the calculator I wanted to exist. It uses published OPM pay tables,
+      splits your career history at year boundaries automatically, and shows you
+      exactly which months contributed to your High-3 and by how much.
+    </p>
+
+    <p style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 3rem;">
+      Everything here is free. No account, no email, no ads. If it's useful,
+      <a href="https://buymeacoffee.com" style="color: #2A7D9C; text-decoration: underline;">buying me a coffee</a>
+      helps keep it running.
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 3rem;" />
+
+    <h2 style="font-size: 1.1rem; font-weight: 700; color: #0F2244; margin: 0 0 1.25rem;">What's here now</h2>
+    <ul style="margin: 0 0 3rem; padding: 0 0 0 1.25rem; color: #334155; line-height: 2;">
+      <li><a href="/calculator/high-3" style="color: #2A7D9C; text-decoration: none;">High-3 Average Salary Calculator</a> — OPM-compliant, uses real GS pay tables</li>
+    </ul>
+
+    <h2 style="font-size: 1.1rem; font-weight: 700; color: #0F2244; margin: 0 0 1.25rem;">What's coming</h2>
+    <ul style="margin: 0 0 3rem; padding: 0 0 0 1.25rem; color: #334155; line-height: 2;">
+      <li>FERS Basic Annuity Calculator</li>
+      <li>TSP Projection Calculator</li>
+      <li>FERS Supplement Estimator</li>
+      <li>Retirement Eligibility Checker (MRA, MRA+10, MRA+30)</li>
+    </ul>
+
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 3rem;" />
+
+    <h2 style="font-size: 1.1rem; font-weight: 700; color: #0F2244; margin: 0 0 1.25rem;">A note on accuracy</h2>
+    <p style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;">
+      I've tested the High-3 math extensively against OPM's published rules.
+      That said, I'm not a financial advisor or an HR specialist. Use this to
+      understand your situation — then verify the final numbers with your agency
+      HR office before making any retirement decisions.
+    </p>
+
+  </main>
+
+</Layout>
