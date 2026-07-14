@@ -1,4 +1,4 @@
-# RetireWise — Federal Retirement Planning Blog
+# FERSmath — Federal Retirement Planning Blog
 
 A content-driven blog and calculator platform focused on **federal employee retirement planning**. Built with Astro and deployed via a fully automated CI/CD pipeline to GitHub Pages.
 
