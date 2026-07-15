@@ -1,0 +1,51 @@
+name: Update TSP Price Data
+
+on:
+  schedule:
+    # Daily, well after TSP typically posts share prices for the prior
+    # business day. Runs every day including weekends/holidays — the fetch
+    # script is idempotent and a no-op commit is skipped when nothing changed.
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-tsp-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Fetch + rebuild
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch latest TSP share prices
+        run: npm run fetch:tsp
+
+      - name: Rebuild per-fund and matrix JSON
+        run: npm run generate:tsp
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/tsp/fund-price-history.csv public/tsp/
+          if git diff --cached --quiet; then
+            echo "No price changes — nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore: update TSP price data"
+          git push
