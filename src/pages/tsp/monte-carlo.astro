@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TspMonteCarlo from '../../components/TspMonteCarlo';
+---
+
+<Layout
+  title="TSP Monte Carlo Projection | FersMath"
+  description="Enter your TSP balances and see a range of simulated future outcomes built from actual historical fund returns, not a single assumed growth rate."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 980px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>TSP Monte Carlo Projection</span>
+      </nav>
+
+      <!-- React component — client:load so it hydrates immediately -->
+      <TspMonteCarlo client:load />
+
+    </div>
+  </main>
+</Layout>
