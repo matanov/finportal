@@ -22,8 +22,29 @@ const {
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <style>
+      .bmc-btn-container {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 999;
+      }
+    </style>
   </head>
   <body>
     <slot />
+    <script
+      is:inline
+      type="text/javascript"
+      src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+      data-name="bmc-button"
+      data-slug="matanov"
+      data-color="#FFDD00"
+      data-emoji=""
+      data-font="Cookie"
+      data-text="Buy me a coffee"
+      data-outline-color="#000000"
+      data-font-color="#000000"
+      data-coffee-color="#ffffff"></script>
   </body>
 </html>
