@@ -572,10 +572,11 @@ export default function TspPerformance() {
 
         <div style={{ marginTop: "1.25rem", display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-end" }}>
           <div>
-            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "0.25rem" }}>
+            <label htmlFor="tsp-start-date" style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "0.25rem" }}>
               Start date
             </label>
             <input
+              id="tsp-start-date"
               type="date"
               value={start}
               min={MIN_DATE}
@@ -585,10 +586,11 @@ export default function TspPerformance() {
             />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "0.25rem" }}>
+            <label htmlFor="tsp-end-date" style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "0.25rem" }}>
               End date
             </label>
             <input
+              id="tsp-end-date"
               type="date"
               value={end}
               min={MIN_DATE}

@@ -49,9 +49,16 @@ type CalcState = "idle" | "loading" | "done" | "error";
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({
+  htmlFor,
+  children,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label
+      htmlFor={htmlFor}
       style={{
         display: "block",
         fontSize: "0.75rem",
@@ -68,11 +75,13 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function Select({
+  id,
   value,
   onChange,
   children,
   style,
 }: {
+  id?: string;
   value: string | number;
   onChange: (v: string) => void;
   children: React.ReactNode;
@@ -80,6 +89,7 @@ function Select({
 }) {
   return (
     <select
+      id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{
@@ -100,12 +110,14 @@ function Select({
 }
 
 function Input({
+  id,
   type = "text",
   value,
   onChange,
   placeholder,
   style,
 }: {
+  id?: string;
   type?: string;
   value: string;
   onChange: (v: string) => void;
@@ -114,6 +126,7 @@ function Input({
 }) {
   return (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -183,8 +196,9 @@ function CareerRow({
     >
       {/* Effective Date — pay year auto-derived from this */}
       <div>
-        <Label>Effective Date</Label>
+        <Label htmlFor={`effective-date-${index}`}>Effective Date</Label>
         <Input
+          id={`effective-date-${index}`}
           type="date"
           value={step.effectiveDate}
           onChange={set("effectiveDate")}
@@ -215,8 +229,8 @@ function CareerRow({
 
       {/* Grade */}
       <div>
-        <Label>Grade</Label>
-        <Select value={step.grade} onChange={set("grade")}>
+        <Label htmlFor={`grade-${index}`}>Grade</Label>
+        <Select id={`grade-${index}`} value={step.grade} onChange={set("grade")}>
           {GRADES.map((g) => (
             <option key={g} value={g}>
               GS-{g}
@@ -227,8 +241,8 @@ function CareerRow({
 
       {/* Step */}
       <div>
-        <Label>Step</Label>
-        <Select value={step.step} onChange={set("step")}>
+        <Label htmlFor={`step-${index}`}>Step</Label>
+        <Select id={`step-${index}`} value={step.step} onChange={set("step")}>
           {STEPS.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -239,8 +253,8 @@ function CareerRow({
 
       {/* Locality */}
       <div>
-        <Label>Locality Area</Label>
-        <Select value={step.locality} onChange={set("locality")}>
+        <Label htmlFor={`locality-${index}`}>Locality Area</Label>
+        <Select id={`locality-${index}`} value={step.locality} onChange={set("locality")}>
           {LOCALITY_OPTIONS.map(({ code, name }) => (
             <option key={code} value={code}>
               {code} — {name}
@@ -707,8 +721,9 @@ export default function High3Calculator() {
         }}
       >
         <div style={{ maxWidth: "260px" }}>
-          <Label>Separation Date (or today if still employed)</Label>
+          <Label htmlFor="separation-date">Separation Date (or today if still employed)</Label>
           <Input
+            id="separation-date"
             type="date"
             value={separationDate}
             onChange={setSeparationDate}

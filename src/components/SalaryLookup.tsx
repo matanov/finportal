@@ -31,9 +31,16 @@ type LookupState = "loading" | "done" | "error";
 // Small shared controls
 // ---------------------------------------------------------------------------
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({
+  htmlFor,
+  children,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label
+      htmlFor={htmlFor}
       style={{
         display: "block",
         fontSize: "0.75rem",
@@ -50,16 +57,19 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 function Select({
+  id,
   value,
   onChange,
   children,
 }: {
+  id?: string;
   value: string | number;
   onChange: (v: string) => void;
   children: React.ReactNode;
 }) {
   return (
     <select
+      id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{
@@ -270,8 +280,8 @@ export default function SalaryLookup() {
         }}
       >
         <div>
-          <Label>Locality Area</Label>
-          <Select value={locality} onChange={setLocality}>
+          <Label htmlFor="locality-area">Locality Area</Label>
+          <Select id="locality-area" value={locality} onChange={setLocality}>
             {LOCALITY_OPTIONS.map(({ code, name }) => (
               <option key={code} value={code}>
                 {code} — {name}
@@ -280,8 +290,8 @@ export default function SalaryLookup() {
           </Select>
         </div>
         <div>
-          <Label>Grade</Label>
-          <Select value={grade} onChange={(v) => setGrade(Number(v))}>
+          <Label htmlFor="grade">Grade</Label>
+          <Select id="grade" value={grade} onChange={(v) => setGrade(Number(v))}>
             {GRADES.map((g) => (
               <option key={g} value={g}>
                 GS-{g}
@@ -290,8 +300,8 @@ export default function SalaryLookup() {
           </Select>
         </div>
         <div>
-          <Label>Step</Label>
-          <Select value={step} onChange={(v) => setStep(Number(v))}>
+          <Label htmlFor="step">Step</Label>
+          <Select id="step" value={step} onChange={(v) => setStep(Number(v))}>
             {STEPS.map((s) => (
               <option key={s} value={s}>
                 {s}
