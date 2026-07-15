@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TspPerformance from '../../components/TspPerformance';
+---
+
+<Layout
+  title="TSP Fund Performance | FersMath"
+  description="Compare TSP fund share price performance over time — pick funds and a date range and see indexed percent-change performance on a chart."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 980px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>TSP Fund Performance</span>
+      </nav>
+
+      <!-- React component — client:load so it hydrates immediately -->
+      <TspPerformance client:load />
+
+    </div>
+  </main>
+</Layout>
