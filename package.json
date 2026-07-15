@@ -7,8 +7,10 @@
   },
   "scripts": {
     "generate:pay": "node scripts/build-pay-lookup.mjs",
-    "prebuild": "node scripts/build-pay-lookup.mjs",
-    "predev": "node scripts/build-pay-lookup.mjs",
+    "generate:tsp": "node scripts/build-tsp-lookup.mjs",
+    "fetch:tsp": "node scripts/fetch-tsp-prices.mjs",
+    "prebuild": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",
+    "predev": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
