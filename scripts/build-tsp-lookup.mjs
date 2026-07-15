@@ -6,15 +6,23 @@
  * views below are derived from that same parse so they can't drift apart.
  *
  * Input:  src/data/tsp/fund-price-history.csv  (fetched by fetch-tsp-prices.mjs)
- * Output: public/tsp/<FUND>.json   → { fund, name, inception, asOf, count, prices: [{date, price}, ...] }
- *         public/tsp/TSP.json      → sparse matrix for Monte Carlo: { dates, funds, prices: { <FUND>: [price|null, ...] } }
- *         public/tsp/index.json    → { funds: ["C", "F", "G", "I", "L-Income", ...] }
+ * Output: public/tsp/<FUND>.json          → { fund, name, inception, asOf, count, prices: [{date, price}, ...] }
+ *         public/tsp/TSP.json             → sparse matrix for correlation: { dates, funds, prices: { <FUND>: [price|null, ...] } }
+ *         public/tsp/monthly-returns.json → sparse monthly returns for the Monte Carlo bootstrap: { months, funds, returns: { <FUND>: [return|null, ...] } }
+ *         public/tsp/index.json           → { funds: ["C", "F", "G", "I", "L-Income", ...] }
  *
  * Each fund's `prices` in <FUND>.json only contains dates from that fund's
  * own inception onward (blank cells in the source CSV before a fund existed
  * are dropped). TSP.json instead keeps every fund aligned to the same full
  * `dates` array, with `null` for dates before a fund's inception, so it can
  * be used to compute cross-fund correlations for portfolio simulation.
+ *
+ * monthly-returns.json is derived from the same matrix: each fund's return
+ * for a calendar month is its last available price that month vs. the prior
+ * month's. The most recent calendar month is always dropped — since prices
+ * are fetched daily rather than only at month-end, the latest month is
+ * still in progress, and treating a partial month as a full month's return
+ * would bias the bootstrap sample toward smaller-magnitude moves.
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -119,5 +127,41 @@ writeFileSync(
   })
 );
 console.log(`✓ TSP.json written — ${dates.length} dates × ${availableFunds.length} funds (sparse)`);
+
+// --- Monthly returns for Monte Carlo bootstrap resampling ---
+const monthKeys = [];
+const lastRowIndexByMonth = new Map();
+for (let i = 0; i < rows.length; i++) {
+  const key = dates[i].slice(0, 7); // "YYYY-MM"
+  if (!lastRowIndexByMonth.has(key)) monthKeys.push(key);
+  lastRowIndexByMonth.set(key, i); // overwritten each hit -> ends up as that month's last row
+}
+
+// Drop the most recent (still in-progress) month.
+const completeMonthKeys = monthKeys.slice(0, -1);
+
+const monthlyReturns = {};
+for (const slug of availableFunds) {
+  const column = matrixPrices[slug];
+  const monthEndPrices = completeMonthKeys.map((key) => column[lastRowIndexByMonth.get(key)]);
+
+  monthlyReturns[slug] = monthEndPrices.map((price, i) => {
+    const prev = i > 0 ? monthEndPrices[i - 1] : null;
+    return price === null || prev === null ? null : price / prev - 1;
+  });
+}
+
+writeFileSync(
+  join(outputDir, 'monthly-returns.json'),
+  JSON.stringify({
+    asOf: completeMonthKeys[completeMonthKeys.length - 1],
+    months: completeMonthKeys,
+    funds: availableFunds,
+    returns: monthlyReturns,
+  })
+);
+console.log(
+  `✓ monthly-returns.json written — ${completeMonthKeys.length} complete months × ${availableFunds.length} funds (sparse)`
+);
 
 console.log(`  Output: public/tsp/\n`);
