@@ -332,6 +332,52 @@ function MoneyInput({
   );
 }
 
+function FundRow({
+  slug,
+  traditional,
+  roth,
+  onChangeTraditional,
+  onChangeRoth,
+}: {
+  slug: string;
+  traditional: number;
+  roth: number;
+  onChangeTraditional: (v: number) => void;
+  onChangeRoth: (v: number) => void;
+}) {
+  return (
+    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+      <td style={{ padding: "0.4rem 0.5rem", color: "#1e293b", fontSize: "0.85rem" }}>{fundLabel(slug)}</td>
+      <td style={{ padding: "0.4rem 0.5rem" }}>
+        <MoneyInput
+          id={`trad-${slug}`}
+          ariaLabel={`${fundLabel(slug)} Traditional balance`}
+          value={traditional}
+          onChange={onChangeTraditional}
+        />
+      </td>
+      <td style={{ padding: "0.4rem 0.5rem" }}>
+        <MoneyInput id={`roth-${slug}`} ariaLabel={`${fundLabel(slug)} Roth balance`} value={roth} onChange={onChangeRoth} />
+      </td>
+    </tr>
+  );
+}
+
+/** Delays adopting a new value until it's been stable for delayMs — keeps
+ * typing responsive while deferring expensive downstream work (the Monte
+ * Carlo run) until the user pauses. `depsKey` should be a stable primitive
+ * (e.g. JSON.stringify(value)) since `value` itself is a fresh reference
+ * every render. */
+function useDebouncedValue<T>(value: T, delayMs: number, depsKey: string): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handle = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depsKey, delayMs]);
+  return debounced;
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -340,9 +386,15 @@ export default function TspMonteCarlo() {
   const [monthlyReturns, setMonthlyReturns] = useState<MonthlyReturns | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [balances, setBalances] = useState<Balances>({});
-  const [horizonYears, setHorizonYears] = useState(20);
+  // Raw text the user is typing, decoupled from the clamped numeric value —
+  // clamping on every keystroke fought typing (clearing the field snapped it
+  // straight back to the min, so the next digit landed after a stray "1").
+  const [horizonInput, setHorizonInput] = useState("20");
   const [useCustomRate, setUseCustomRate] = useState(false);
-  const [customRatePct, setCustomRatePct] = useState(6);
+  const [customRateInput, setCustomRateInput] = useState("6");
+
+  const horizonYears = Math.min(50, Math.max(1, parseInt(horizonInput, 10) || 1));
+  const customRatePct = Number(customRateInput) || 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -377,6 +429,14 @@ export default function TspMonteCarlo() {
   const startTraditional = heldFunds.reduce((sum, f) => sum + (balances[f]?.traditional || 0), 0);
   const tradRatio = startTotal > 0 ? startTraditional / startTotal : 0;
 
+  // The simulation (2,000 trials) is too expensive to re-run synchronously on
+  // every keystroke — that was stalling typing in the balance/horizon/rate
+  // inputs. Debounce the trigger so it only re-runs ~350ms after the user
+  // pauses; the chart/table just hold their last render in the meantime.
+  const simKey = JSON.stringify({ totalByFund, heldFunds, horizonYears, useCustomRate, customRatePct });
+  const debouncedSimKey = useDebouncedValue(simKey, 350, simKey);
+  const isPending = simKey !== debouncedSimKey;
+
   const result = useMemo(() => {
     if (!monthlyReturns || heldFunds.length === 0) return null;
     return runSimulation({
@@ -387,7 +447,7 @@ export default function TspMonteCarlo() {
       customAnnualRate: useCustomRate ? customRatePct / 100 : null,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthlyReturns, JSON.stringify(totalByFund), horizonYears, useCustomRate, customRatePct]);
+  }, [monthlyReturns, debouncedSimKey]);
 
   const { core, lifecycle } = monthlyReturns ? sortFunds(monthlyReturns.funds) : { core: [], lifecycle: [] };
 
@@ -398,30 +458,6 @@ export default function TspMonteCarlo() {
     ys.push(horizonYears);
     return ys;
   }, [horizonYears]);
-
-  function FundRow({ slug }: { slug: string }) {
-    return (
-      <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-        <td style={{ padding: "0.4rem 0.5rem", color: "#1e293b", fontSize: "0.85rem" }}>{fundLabel(slug)}</td>
-        <td style={{ padding: "0.4rem 0.5rem" }}>
-          <MoneyInput
-            id={`trad-${slug}`}
-            ariaLabel={`${fundLabel(slug)} Traditional balance`}
-            value={balances[slug]?.traditional ?? 0}
-            onChange={(v) => setBalance(slug, "traditional", v)}
-          />
-        </td>
-        <td style={{ padding: "0.4rem 0.5rem" }}>
-          <MoneyInput
-            id={`roth-${slug}`}
-            ariaLabel={`${fundLabel(slug)} Roth balance`}
-            value={balances[slug]?.roth ?? 0}
-            onChange={(v) => setBalance(slug, "roth", v)}
-          />
-        </td>
-      </tr>
-    );
-  }
 
   return (
     <div style={{ fontFamily: "Inter, system-ui, sans-serif", maxWidth: "980px", margin: "0 auto", padding: "1.5rem" }}>
@@ -461,11 +497,15 @@ export default function TspMonteCarlo() {
               </tr>
             </thead>
             <tbody>
-              {core.map((slug) => (
-                <FundRow key={slug} slug={slug} />
-              ))}
-              {lifecycle.map((slug) => (
-                <FundRow key={slug} slug={slug} />
+              {[...core, ...lifecycle].map((slug) => (
+                <FundRow
+                  key={slug}
+                  slug={slug}
+                  traditional={balances[slug]?.traditional ?? 0}
+                  roth={balances[slug]?.roth ?? 0}
+                  onChangeTraditional={(v) => setBalance(slug, "traditional", v)}
+                  onChangeRoth={(v) => setBalance(slug, "roth", v)}
+                />
               ))}
             </tbody>
           </table>
@@ -494,8 +534,9 @@ export default function TspMonteCarlo() {
               type="number"
               min={1}
               max={50}
-              value={horizonYears}
-              onChange={(e) => setHorizonYears(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
+              value={horizonInput}
+              onChange={(e) => setHorizonInput(e.target.value)}
+              onBlur={() => setHorizonInput(String(horizonYears))}
               style={{ width: "90px", padding: "0.4rem 0.5rem", border: "1px solid #e2e8f0", borderRadius: "0.375rem", fontSize: "0.85rem" }}
             />
           </div>
@@ -510,8 +551,9 @@ export default function TspMonteCarlo() {
                   id="custom-rate"
                   type="number"
                   step={0.1}
-                  value={customRatePct}
-                  onChange={(e) => setCustomRatePct(Number(e.target.value))}
+                  value={customRateInput}
+                  onChange={(e) => setCustomRateInput(e.target.value)}
+                  onBlur={() => setCustomRateInput(String(customRatePct))}
                   style={{ width: "80px", padding: "0.4rem 0.5rem", border: "1px solid #e2e8f0", borderRadius: "0.375rem", fontSize: "0.85rem" }}
                 />
                 <label htmlFor="custom-rate" style={{ marginLeft: "0.4rem", fontSize: "0.85rem", color: "#64748b" }}>
@@ -524,7 +566,7 @@ export default function TspMonteCarlo() {
       </Card>
 
       {/* Results */}
-      <Card style={{ marginBottom: "1.5rem" }}>
+      <Card style={{ marginBottom: "1.5rem", opacity: isPending ? 0.6 : 1, transition: "opacity 150ms" }}>
         <CardTitle>Projected Balance Range</CardTitle>
 
         {heldFunds.length === 0 ? (
