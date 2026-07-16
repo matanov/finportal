@@ -1,8 +1,11 @@
 /**
  * TspMonteCarlo.tsx
  *
- * TSP Monte Carlo Projection — enter today's per-fund balances (Traditional
- * + Roth), pick a horizon, and see a range of simulated future outcomes.
+ * TSP Monte Carlo Projection — enter today's per-fund balances, pick a
+ * horizon, and see a range of simulated future outcomes. Traditional/Roth
+ * is a single overall % split applied to the simulated total for display
+ * only (it doesn't affect the simulation itself — same funds grow the same
+ * way regardless of tax treatment).
  *
  * Engine: historical monthly-block bootstrap. Each simulated month draws
  * one random historical month and applies that SAME month's return to every
@@ -25,7 +28,7 @@ type MonthlyReturns = {
   returns: Record<string, (number | null)[]>;
 };
 
-type Balances = Record<string, { traditional: number; roth: number }>;
+type Balances = Record<string, number>;
 
 const CORE_FUNDS = ["G", "F", "C", "S", "I"];
 const TRIALS = 2000;
@@ -332,34 +335,16 @@ function MoneyInput({
   );
 }
 
-function FundRow({
-  slug,
-  traditional,
-  roth,
-  onChangeTraditional,
-  onChangeRoth,
-}: {
-  slug: string;
-  traditional: number;
-  roth: number;
-  onChangeTraditional: (v: number) => void;
-  onChangeRoth: (v: number) => void;
-}) {
+function FundRow({ slug, value, onChange }: { slug: string; value: number; onChange: (v: number) => void }) {
   return (
-    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-      <td style={{ padding: "0.4rem 0.5rem", color: "#1e293b", fontSize: "0.85rem" }}>{fundLabel(slug)}</td>
-      <td style={{ padding: "0.4rem 0.5rem" }}>
-        <MoneyInput
-          id={`trad-${slug}`}
-          ariaLabel={`${fundLabel(slug)} Traditional balance`}
-          value={traditional}
-          onChange={onChangeTraditional}
-        />
-      </td>
-      <td style={{ padding: "0.4rem 0.5rem" }}>
-        <MoneyInput id={`roth-${slug}`} ariaLabel={`${fundLabel(slug)} Roth balance`} value={roth} onChange={onChangeRoth} />
-      </td>
-    </tr>
+    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+      <label htmlFor={`bal-${slug}`} style={{ flex: 1, fontSize: "0.85rem", color: "#1e293b" }}>
+        {fundLabel(slug)}
+      </label>
+      <div style={{ width: "130px", flexShrink: 0 }}>
+        <MoneyInput id={`bal-${slug}`} ariaLabel={`${fundLabel(slug)} balance`} value={value} onChange={onChange} />
+      </div>
+    </div>
   );
 }
 
@@ -392,9 +377,13 @@ export default function TspMonteCarlo() {
   const [horizonInput, setHorizonInput] = useState("20");
   const [useCustomRate, setUseCustomRate] = useState(false);
   const [customRateInput, setCustomRateInput] = useState("6");
+  // Single overall Traditional/Roth split (not per-fund) — it's only used to
+  // divide the simulated total for display, so one number covers it.
+  const [tradPctInput, setTradPctInput] = useState("100");
 
   const horizonYears = Math.min(50, Math.max(1, parseInt(horizonInput, 10) || 1));
   const customRatePct = Number(customRateInput) || 0;
+  const tradPct = Math.min(100, Math.max(0, Number(tradPctInput) || 0));
 
   useEffect(() => {
     let cancelled = false;
@@ -411,29 +400,21 @@ export default function TspMonteCarlo() {
     };
   }, []);
 
-  function setBalance(fund: string, field: "traditional" | "roth", value: number) {
-    setBalances((prev) => ({
-      ...prev,
-      [fund]: { traditional: prev[fund]?.traditional ?? 0, roth: prev[fund]?.roth ?? 0, [field]: value },
-    }));
+  function setBalance(fund: string, value: number) {
+    setBalances((prev) => ({ ...prev, [fund]: value }));
   }
 
-  const totalByFund = useMemo(() => {
-    const out: Record<string, number> = {};
-    for (const [fund, b] of Object.entries(balances)) out[fund] = (b.traditional || 0) + (b.roth || 0);
-    return out;
-  }, [balances]);
-
-  const heldFunds = Object.keys(totalByFund).filter((f) => totalByFund[f] > 0);
-  const startTotal = heldFunds.reduce((sum, f) => sum + totalByFund[f], 0);
-  const startTraditional = heldFunds.reduce((sum, f) => sum + (balances[f]?.traditional || 0), 0);
-  const tradRatio = startTotal > 0 ? startTraditional / startTotal : 0;
+  const heldFunds = Object.keys(balances).filter((f) => balances[f] > 0);
+  const startTotal = heldFunds.reduce((sum, f) => sum + balances[f], 0);
+  const tradRatio = tradPct / 100;
 
   // The simulation (2,000 trials) is too expensive to re-run synchronously on
   // every keystroke — that was stalling typing in the balance/horizon/rate
   // inputs. Debounce the trigger so it only re-runs ~350ms after the user
   // pauses; the chart/table just hold their last render in the meantime.
-  const simKey = JSON.stringify({ totalByFund, heldFunds, horizonYears, useCustomRate, customRatePct });
+  // (% Traditional is a pure display-time split of the result, not part of
+  // the simulation itself, so it's deliberately left out of this key.)
+  const simKey = JSON.stringify({ balances, heldFunds, horizonYears, useCustomRate, customRatePct });
   const debouncedSimKey = useDebouncedValue(simKey, 350, simKey);
   const isPending = simKey !== debouncedSimKey;
 
@@ -441,7 +422,7 @@ export default function TspMonteCarlo() {
     if (!monthlyReturns || heldFunds.length === 0) return null;
     return runSimulation({
       monthlyReturns,
-      totalByFund,
+      totalByFund: balances,
       heldFunds,
       horizonYears,
       customAnnualRate: useCustomRate ? customRatePct / 100 : null,
@@ -487,43 +468,60 @@ export default function TspMonteCarlo() {
       {/* Balances */}
       <Card style={{ marginBottom: "1.5rem" }}>
         <CardTitle>Current Balances</CardTitle>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ textAlign: "left", padding: "0.4rem 0.5rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" }}>
-                  Fund
-                </th>
-                <th style={{ textAlign: "left", padding: "0.4rem 0.5rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" }}>
-                  Traditional
-                </th>
-                <th style={{ textAlign: "left", padding: "0.4rem 0.5rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" }}>
-                  Roth
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...core, ...lifecycle].map((slug) => (
-                <FundRow
-                  key={slug}
-                  slug={slug}
-                  traditional={balances[slug]?.traditional ?? 0}
-                  roth={balances[slug]?.roth ?? 0}
-                  onChangeTraditional={(v) => setBalance(slug, "traditional", v)}
-                  onChangeRoth={(v) => setBalance(slug, "roth", v)}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gridAutoFlow: "column",
+            gridTemplateRows: `repeat(${Math.ceil([...core, ...lifecycle].length / 2)}, auto)`,
+            columnGap: "2rem",
+            rowGap: "0.6rem",
+          }}
+        >
+          {[...core, ...lifecycle].map((slug) => (
+            <FundRow key={slug} slug={slug} value={balances[slug] ?? 0} onChange={(v) => setBalance(slug, v)} />
+          ))}
         </div>
-        <div style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: "#52514e" }}>
-          Total: <strong style={{ color: "#0F2244" }}>{fmtMoney(startTotal)}</strong>
-          {startTotal > 0 && (
-            <span style={{ color: "#94a3b8" }}>
-              {" "}
-              ({fmtMoney(startTraditional)} Traditional / {fmtMoney(startTotal - startTraditional)} Roth)
-            </span>
-          )}
+
+        <div
+          style={{
+            marginTop: "1.25rem",
+            paddingTop: "1rem",
+            borderTop: "1px solid #f1f5f9",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "1.5rem",
+          }}
+        >
+          <div>
+            <label htmlFor="trad-pct" style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", marginBottom: "0.25rem" }}>
+              % Traditional
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+              <input
+                id="trad-pct"
+                type="number"
+                min={0}
+                max={100}
+                value={tradPctInput}
+                onChange={(e) => setTradPctInput(e.target.value)}
+                onBlur={() => setTradPctInput(String(tradPct))}
+                style={{ width: "70px", padding: "0.4rem 0.5rem", border: "1px solid #e2e8f0", borderRadius: "0.375rem", fontSize: "0.85rem" }}
+              />
+              <span style={{ fontSize: "0.85rem", color: "#64748b" }}>%</span>
+            </div>
+          </div>
+
+          <div style={{ fontSize: "0.85rem", color: "#52514e" }}>
+            Total: <strong style={{ color: "#0F2244" }}>{fmtMoney(startTotal)}</strong>
+            {startTotal > 0 && (
+              <span style={{ color: "#94a3b8" }}>
+                {" "}
+                ({fmtMoney(startTotal * tradRatio)} Traditional / {fmtMoney(startTotal * (1 - tradRatio))} Roth)
+              </span>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -671,6 +669,25 @@ export default function TspMonteCarlo() {
       <div
         style={{
           marginTop: "1.5rem",
+          padding: "1rem 1.25rem",
+          background: "#fff",
+          border: "1px solid #e2e8f0",
+          borderRadius: "0.75rem",
+          fontSize: "0.8rem",
+          color: "#94a3b8",
+          lineHeight: 1.6,
+        }}
+      >
+        <strong style={{ color: "#64748b" }}>Reading the chart:</strong> each simulation is one possible future built
+        by resampling real historical months. The median (50th percentile) is the middle simulated outcome — half of
+        the {TRIALS.toLocaleString()} simulations ended higher, half lower. The narrow band covers the middle 50% of
+        outcomes (25th–75th percentile); the wide band covers the middle 80% (10th–90th percentile). Real results
+        could still fall outside every band shown.
+      </div>
+
+      <div
+        style={{
+          marginTop: "1rem",
           padding: "1rem 1.25rem",
           background: "#fff",
           border: "1px solid #e2e8f0",
