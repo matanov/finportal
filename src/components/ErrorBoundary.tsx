@@ -43,9 +43,20 @@ export default class ErrorBoundary extends Component<Props, State> {
             <strong>Something went wrong loading {this.props.name}.</strong>
             <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem" }}>
               Try{" "}
-              <a href="" style={{ color: "#dc2626", textDecoration: "underline" }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  color: "#dc2626",
+                  textDecoration: "underline",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  font: "inherit",
+                  cursor: "pointer",
+                }}
+              >
                 reloading the page
-              </a>
+              </button>
               . If it keeps happening, the tool itself needs a fix.
             </p>
           </div>
