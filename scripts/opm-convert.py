@@ -1,4 +1,40 @@
 #!/usr/bin/env python3
+"""
+opm-convert.py
+
+Converts an OPM-published General Schedule pay table (an Excel workbook,
+.xlsx/.xls, downloaded from OPM's pay & leave site) into the JSON shape
+build-pay-lookup.mjs expects in src/data/pay-scales/. This is the missing
+first step in the "GS Pay Scales" update process documented in the
+project README: OPM publishes each year's rates as Excel, not JSON, and
+this script is the one-time manual conversion between "download the
+year's file from OPM" and "drop the JSON into src/data/pay-scales/".
+
+Usage:
+    python3 scripts/opm-convert.py paytable.xlsx
+    python3 scripts/opm-convert.py paytable.xlsx output.json
+
+Requires pandas and an Excel engine: pip install pandas openpyxl
+
+Output shape:
+    { "<worksheet name>": [
+        { "location": "AK", "grade": 1, "steps": [{"step": 1, "annual": 29892}, ...] },
+        ...
+    ] }
+
+Only the FIRST worksheet's data ends up used — build-pay-lookup.mjs reads
+Object.keys(raw)[0] and ignores any other top-level keys. OPM's published
+file has only ever had the one relevant sheet ("ALL_GS") in practice, but
+if that ever changes, either re-export just the sheet that matters or
+merge the sheets before dropping the JSON in.
+
+After conversion:
+    1. Rename/move the output to
+       src/data/pay-scales/YYYY-general-schedule-pay-rates.json
+       (the leading year is how build-pay-lookup.mjs discovers new years).
+    2. Run `npm run generate:pay` (or just `npm run build`, which runs it
+       automatically) to regenerate public/pay-scales/.
+"""
 
 import json
 import sys
@@ -98,8 +134,8 @@ def convert_excel(input_file, output_file=None):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage:")
-        print("    python excel_to_json.py paytable.xlsx")
-        print("    python excel_to_json.py paytable.xls output.json")
+        print("    python3 scripts/opm-convert.py paytable.xlsx")
+        print("    python3 scripts/opm-convert.py paytable.xls output.json")
         sys.exit(1)
 
     infile = sys.argv[1]

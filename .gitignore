@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env
 .env.production
 
+# Python bytecode cache (scripts/opm-convert.py)
+__pycache__/
+*.pyc
+
 # macOS-specific files
 .DS_Store
 

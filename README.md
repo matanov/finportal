@@ -34,6 +34,7 @@ Live site: **https://fersmath.com**
 │       ├── deploy.yml            # Build + deploy to GitHub Pages, on every push to main
 │       └── update-tsp-data.yml   # Daily: fetch TSP prices, rebuild lookups, commit + redeploy
 ├── scripts/
+│   ├── opm-convert.py            # OPM Excel pay table -> JSON (manual, run once per new year)
 │   ├── build-pay-lookup.mjs      # src/data/pay-scales/*.json  -> public/pay-scales/*.json
 │   ├── fetch-tsp-prices.mjs      # tsp.gov CSV -> src/data/tsp/fund-price-history.csv
 │   └── build-tsp-lookup.mjs      # src/data/tsp/*.csv -> public/tsp/*.json
@@ -65,12 +66,14 @@ The site has two data pipelines, with very different update processes because of
 
 ### GS Pay Scales — manual, ~once a year
 
-OPM publishes new General Schedule pay tables annually (typically effective each January) as static documents, not a feed anything can poll. There's no automation for this — it's a manual step when a new year's rates are published:
+OPM publishes new General Schedule pay tables annually (typically effective each January) as an **Excel workbook**, not JSON and not a feed anything can poll. There's no automation for this — it's a manual step when a new year's rates are published:
 
-1. Add the new year's data as `src/data/pay-scales/YYYY-general-schedule-pay-rates.json`, matching the structure of an existing year's file.
-2. That's it. `npm run build` (and therefore every deploy) runs `scripts/build-pay-lookup.mjs`, which auto-discovers every file in `src/data/pay-scales/` and regenerates the compact lookups in `public/pay-scales/` — no code changes needed for a new year.
+1. Download the new year's GS pay table from OPM as Excel (`.xlsx`).
+2. Convert it to JSON: `python3 scripts/opm-convert.py paytable.xlsx` (requires `pip install pandas openpyxl`). See the script's header comment for the expected output shape and a caveat about multi-sheet workbooks.
+3. Move/rename the result to `src/data/pay-scales/YYYY-general-schedule-pay-rates.json`.
+4. That's it. `npm run build` (and therefore every deploy) runs `scripts/build-pay-lookup.mjs`, which auto-discovers every file in `src/data/pay-scales/` and regenerates the compact lookups in `public/pay-scales/` — no code changes needed for a new year.
 
-Run `npm run generate:pay` locally to regenerate without a full build.
+Run `npm run generate:pay` locally to regenerate `public/pay-scales/` without a full build.
 
 ### TSP Fund Prices — automated, daily
 
