@@ -451,13 +451,19 @@ export default function TspMonteCarlo() {
 
   const { core, lifecycle } = monthlyReturns ? sortFunds(monthlyReturns.funds) : { core: [], lifecycle: [] };
 
+  // Derived from `result` (the debounced simulation output), never from the
+  // live `horizonYears` — the two can briefly disagree while a recompute is
+  // pending, and indexing result.bands with an out-of-range live year was
+  // throwing (undefined.p50) and blanking the whole page.
   const checkpointYears = useMemo(() => {
-    if (horizonYears <= 10) return Array.from({ length: horizonYears + 1 }, (_, y) => y);
+    if (!result) return [];
+    const maxYear = result.years[result.years.length - 1];
+    if (maxYear <= 10) return Array.from({ length: maxYear + 1 }, (_, y) => y);
     const ys = [0];
-    for (let y = 5; y < horizonYears; y += 5) ys.push(y);
-    ys.push(horizonYears);
+    for (let y = 5; y < maxYear; y += 5) ys.push(y);
+    ys.push(maxYear);
     return ys;
-  }, [horizonYears]);
+  }, [result]);
 
   return (
     <div style={{ fontFamily: "Inter, system-ui, sans-serif", maxWidth: "980px", margin: "0 auto", padding: "1.5rem" }}>
@@ -650,9 +656,10 @@ export default function TspMonteCarlo() {
 
             {startTotal > 0 && (
               <div style={{ marginTop: "1rem", fontSize: "0.8rem", color: "#94a3b8" }}>
-                At the median outcome in year {horizonYears}, roughly {fmtMoney(result.bands[horizonYears].p50 * tradRatio)}{" "}
-                would be Traditional and {fmtMoney(result.bands[horizonYears].p50 * (1 - tradRatio))} Roth, applying
-                today's balance ratio.
+                At the median outcome in year {result.years[result.years.length - 1]}, roughly{" "}
+                {fmtMoney(result.bands[result.bands.length - 1].p50 * tradRatio)} would be Traditional and{" "}
+                {fmtMoney(result.bands[result.bands.length - 1].p50 * (1 - tradRatio))} Roth, applying today's balance
+                ratio.
               </div>
             )}
           </>
