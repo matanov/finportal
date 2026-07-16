@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import ErrorBoundary from "./ErrorBoundary";
 
 // ---------------------------------------------------------------------------
 // Types + constants
@@ -368,6 +369,14 @@ function useDebouncedValue<T>(value: T, delayMs: number, depsKey: string): T {
 // ---------------------------------------------------------------------------
 
 export default function TspMonteCarlo() {
+  return (
+    <ErrorBoundary name="TSP Monte Carlo Projection">
+      <TspMonteCarloInner />
+    </ErrorBoundary>
+  );
+}
+
+function TspMonteCarloInner() {
   const [monthlyReturns, setMonthlyReturns] = useState<MonthlyReturns | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [balances, setBalances] = useState<Balances>({});

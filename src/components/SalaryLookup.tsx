@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import localityData from "../data/localitycode-localityarea.json";
 import { FIRST_PAY_YEAR, LAST_PAY_YEAR, lookupSalary } from "../lib/payLookup";
+import ErrorBoundary from "./ErrorBoundary";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -195,6 +196,14 @@ function GrowthChart({ data }: { data: YearSalary[] }) {
 // ---------------------------------------------------------------------------
 
 export default function SalaryLookup() {
+  return (
+    <ErrorBoundary name="GS Salary History Lookup">
+      <SalaryLookupInner />
+    </ErrorBoundary>
+  );
+}
+
+function SalaryLookupInner() {
   const [locality, setLocality] = useState("DCB");
   const [grade, setGrade] = useState(7);
   const [step, setStep] = useState(1);

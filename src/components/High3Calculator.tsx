@@ -10,6 +10,7 @@ import { careerStepsToServicePeriods, calculateHigh3 } from "../lib/high3";
 import type { CareerStep, High3Result } from "../lib/high3";
 import localityData from "../data/localitycode-localityarea.json";
 import { FIRST_PAY_YEAR, LAST_PAY_YEAR } from "../lib/payLookup";
+import ErrorBoundary from "./ErrorBoundary";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -585,6 +586,14 @@ function ResultsPanel({ result }: { result: High3Result }) {
 // ---------------------------------------------------------------------------
 
 export default function High3Calculator() {
+  return (
+    <ErrorBoundary name="High-3 Average Salary Calculator">
+      <High3CalculatorInner />
+    </ErrorBoundary>
+  );
+}
+
+function High3CalculatorInner() {
   const [steps, setSteps] = useState<CareerStep[]>([{ ...DEFAULT_STEP }]);
   const [separationDate, setSeparationDate] = useState("");
 

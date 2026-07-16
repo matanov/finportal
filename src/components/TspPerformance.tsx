@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ErrorBoundary from "./ErrorBoundary";
 
 // ---------------------------------------------------------------------------
 // Data types + constants
@@ -373,6 +374,14 @@ function PerformanceChart({
 // ---------------------------------------------------------------------------
 
 export default function TspPerformance() {
+  return (
+    <ErrorBoundary name="TSP Fund Performance">
+      <TspPerformanceInner />
+    </ErrorBoundary>
+  );
+}
+
+function TspPerformanceInner() {
   const [availableFunds, setAvailableFunds] = useState<string[] | null>(null);
   const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTED);
   const [fundCache, setFundCache] = useState<Record<string, FundData>>({});
