@@ -6,6 +6,20 @@ A content-driven blog and calculator platform focused on **federal employee reti
 
 This project helps federal employees navigate the complexities of retirement — covering FERS, TSP, CSRS, Social Security coordination, survivor benefits, and more. It pairs in-depth articles with sophisticated planning calculators.
 
+## Calculators
+
+All live calculators are listed at **[/calculators](https://fersmath.com/calculators)** (homepage card grid: `src/components/CalculatorGrid.astro`, reused by both pages). Each one is a static page (`src/pages/calculator/*.astro` or `src/pages/tsp/*.astro`) wrapping a React island (`src/components/*.tsx`, hydrated with `client:load`) that calls a pure calculation module in `src/lib/`.
+
+| Calculator | Route | Logic |
+| :--- | :--- | :--- |
+| High-3 Average Salary | `/calculator/high-3` | `src/lib/high3.ts` |
+| GS Salary History Lookup | `/calculator/salary-lookup` | `src/lib/payLookup.ts` |
+| TSP Fund Performance | `/tsp/performance` | `public/tsp/*.json` (generated, see below) |
+| TSP Monte Carlo Projection | `/tsp/monte-carlo` | `public/tsp/*.json` (generated, see below) |
+| FERS Special Retirement Supplement | `/calculator/fers-supplement` | `src/lib/fersSupplement.ts` |
+
+The blog/articles section on the homepage is not live yet — there's no `/blog` route, and the cards are marked "Coming Soon".
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -45,6 +59,7 @@ Live site: **https://fersmath.com**
 │   │   ├── pay-scales/           # Raw OPM pay tables, one file per year (manual)
 │   │   └── tsp/                  # Raw TSP price history CSV (fetched daily)
 │   ├── layouts/
+│   ├── lib/                      # Pure calculation logic, one module per calculator
 │   ├── pages/
 │   └── styles/
 │       └── global.css       # Tailwind v4 brand design tokens
