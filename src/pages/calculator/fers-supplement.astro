@@ -1,0 +1,46 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import FersSupplementCalculator from '../../components/FersSupplementCalculator';
+---
+
+<Layout
+  title="FERS Special Retirement Supplement Estimator | FersMath"
+  description="Estimate your FERS Special Retirement Supplement from your Social Security estimate and years of FERS civilian service. Military buyback years do not count toward this calculation."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 960px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>FERS Supplement Estimator</span>
+      </nav>
+
+      <!-- OPM Rules notice -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem;
+                  padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+        <strong>OPM Rule:</strong> Supplement = Social Security estimate at age 62 ×
+        (years of FERS civilian service ÷ 40), per OPM FERS Handbook Chapter 51.
+        Military service credited to your annuity through a buyback deposit counts
+        toward your basic annuity but is <em>excluded</em> from this calculation.
+      </div>
+
+      <!-- React calculator — client:load so it hydrates immediately -->
+      <FersSupplementCalculator client:load />
+
+      <!-- Disclaimer -->
+      <div style="margin-top: 2rem; padding: 1rem 1.25rem; background: #fff;
+                  border: 1px solid #e2e8f0; border-radius: 0.75rem;
+                  font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+        <strong style="color: #64748b;">Disclaimer:</strong> This tool is for educational
+        purposes only. It does not account for the Social Security earnings test,
+        pro-rated supplements for retirements before minimum retirement age, or
+        agency-specific rules for discontinued service or VERA/VSIP retirements.
+        Always verify your supplement estimate with your agency HR office or OPM
+        before making retirement decisions.
+      </div>
+
+    </div>
+  </main>
+</Layout>
