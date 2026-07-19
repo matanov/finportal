@@ -1,0 +1,270 @@
+---
+// CalculatorGrid.astro — card grid of every calculator, live and upcoming.
+// Shared by the homepage and the /calculators hub page so the two stay in sync.
+---
+
+<div
+  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;"
+>
+  <!-- High-3 Calculator — LIVE -->
+  <a
+    href="/calculator/high-3"
+    style="background-color: var(--color-card); border: 2px solid var(--color-gold-400); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">🏛️</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);"
+        >Live Now</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      High-3 Average Salary Calculator
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Calculate your FERS High-3 using OPM's 360-day rule. Enter your full
+      GS grade and step history to find your highest 36-month window.
+    </p>
+    <div
+      style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;"
+    >
+      Open Calculator
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+      >
+    </div>
+  </a>
+
+  <!-- Salary History Lookup — LIVE -->
+  <a
+    href="/calculator/salary-lookup"
+    style="background-color: var(--color-card); border: 2px solid var(--color-gold-400); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">📊</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);"
+        >Live Now</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      GS Salary History Lookup
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Pick a grade, step, and locality area to see every year of
+      available pay data and a chart of how the salary has grown.
+    </p>
+    <div
+      style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;"
+    >
+      Open Calculator
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+      >
+    </div>
+  </a>
+
+  <!-- TSP Fund Performance — LIVE -->
+  <a
+    href="/tsp/performance"
+    style="background-color: var(--color-card); border: 2px solid var(--color-gold-400); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">💹</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);"
+        >Live Now</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      TSP Fund Performance
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Compare G, F, C, S, I, and Lifecycle fund share prices over any date
+      range since May 2003 on an indexed performance chart.
+    </p>
+    <div
+      style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;"
+    >
+      Open Calculator
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+      >
+    </div>
+  </a>
+
+  <!-- TSP Monte Carlo Projection — LIVE -->
+  <a
+    href="/tsp/monte-carlo"
+    style="background-color: var(--color-card); border: 2px solid var(--color-gold-400); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">🎲</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);"
+        >Live Now</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      TSP Monte Carlo Projection
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Enter your current TSP balances and see a range of simulated future
+      outcomes built from real historical fund returns, not a single
+      assumed growth rate.
+    </p>
+    <div
+      style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;"
+    >
+      Open Calculator
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+      >
+    </div>
+  </a>
+
+  <!-- FERS Supplement Estimator — LIVE -->
+  <a
+    href="/calculator/fers-supplement"
+    style="background-color: var(--color-card); border: 2px solid var(--color-gold-400); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block; box-shadow: var(--shadow-sm);"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">📅</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: var(--color-gold-100); color: var(--color-gold-600);"
+        >Live Now</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      FERS Supplement Estimator
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Estimate your FERS Supplement — the bridge payment you receive before
+      age 62 that approximates your Social Security benefit.
+    </p>
+    <div
+      style="margin-top: 1.25rem; font-size: 0.875rem; font-weight: 600; color: var(--color-teal-500); display: flex; align-items: center; gap: 0.25rem;"
+    >
+      Open Calculator
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg
+      >
+    </div>
+  </a>
+
+  <!-- Coming Soon cards -->
+  <div
+    style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; display: block; box-shadow: var(--shadow-sm); opacity: 0.6;"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">📈</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: #f1f5f9; color: #64748b;"
+        >Coming Soon</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      TSP Projection Calculator
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Project your Thrift Savings Plan balance at retirement based on
+      contributions, agency match, and fund selection.
+    </p>
+  </div>
+
+  <div
+    style="background-color: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.75rem; display: block; box-shadow: var(--shadow-sm); opacity: 0.6;"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;"
+    >
+      <span style="font-size: 1.75rem;">🏦</span>
+      <span
+        style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background-color: #f1f5f9; color: #64748b;"
+        >Coming Soon</span
+      >
+    </div>
+    <h3
+      style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: var(--color-primary-700); margin: 0 0 0.5rem; line-height: 1.3;"
+    >
+      FERS Basic Annuity Calculator
+    </h3>
+    <p
+      style="font-size: 0.875rem; color: var(--color-muted); line-height: 1.6; margin: 0;"
+    >
+      Calculate your full FERS basic annuity including survivor benefit
+      options and the impact of retiring before or after age 62.
+    </p>
+  </div>
+</div>

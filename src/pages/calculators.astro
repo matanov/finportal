@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CalculatorGrid from '../components/CalculatorGrid.astro';
+---
+
+<Layout
+  title="All Calculators | FersMath"
+  description="Every FERSmath calculator in one place — High-3 average salary, GS salary history, TSP fund performance and Monte Carlo projections, and the FERS Special Retirement Supplement."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 1280px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>Calculators</span>
+      </nav>
+
+      <div style="margin-bottom: 2rem;">
+        <h1
+          style="font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--color-primary-700); margin: 0 0 0.5rem;"
+        >
+          All Calculators
+        </h1>
+        <p style="font-size: 1rem; color: var(--color-muted); max-width: 640px; margin: 0;">
+          Every FERSmath tool in one place. Pick a calculator below to get
+          started — each one is free and runs entirely in your browser.
+        </p>
+      </div>
+
+      <CalculatorGrid />
+
+    </div>
+  </main>
+</Layout>
