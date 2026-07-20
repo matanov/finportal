@@ -22,6 +22,13 @@ const {
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <!-- Cloudflare Web Analytics -->
+    <script
+      is:inline
+      type="module"
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "b045c6e8be9b476b925ef1c0c0fd30fe"}'></script>
+    <!-- End Cloudflare Web Analytics -->
     <style is:global>
       .bmc-btn-container {
         text-align: center;
