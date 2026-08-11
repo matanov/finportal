@@ -23,7 +23,7 @@ const yearCache = new Map<number, YearMap>();
 let yearsIndex: number[] | null = null;
 
 /** Earliest and latest pay year we have data for */
-export const FIRST_PAY_YEAR = 2016;
+export const FIRST_PAY_YEAR = 2011;
 export const LAST_PAY_YEAR = 2026;
 
 // ---------------------------------------------------------------------------
