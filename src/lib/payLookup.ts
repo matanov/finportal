@@ -9,7 +9,22 @@
  *
  * TO ADD A NEW YEAR:
  *   1. Drop YYYY-general-schedule-pay-rates.json into src/data/pay-scales/
- *   2. Run `npm run build` — the prebuild script does the rest automatically.
+ *   2. If that year falls outside [FIRST_PAY_YEAR, LAST_PAY_YEAR] below,
+ *      update those constants to include it. This step is easy to miss:
+ *      the new year's data is served correctly either way (build-pay-lookup.mjs
+ *      auto-discovers every file), but SalaryLookup.tsx and high3.ts both
+ *      build their year lists from these two constants, not from the data
+ *      that actually exists — a year outside the range is silently invisible
+ *      in the UI even though `/pay-scales/YYYY.json` 200s fine. (This is
+ *      exactly what happened backfilling 2011-2014: the JSON was right,
+ *      FIRST_PAY_YEAR was still 2016, and the new years just never rendered.)
+ *   3. Run `npm run build` (or `npm run generate:pay` for just the lookups)
+ *      — everything else regenerates automatically.
+ *
+ * A gap year (no file for some YYYY between FIRST_PAY_YEAR and LAST_PAY_YEAR,
+ * e.g. 2015 before it was backfilled) does NOT need special handling —
+ * lookupSalary()'s fetch simply 404s and callers already treat a missing
+ * year as "no data for this year," not an error.
  */
 
 // ---------------------------------------------------------------------------

@@ -56,7 +56,8 @@ Live site: **https://fersmath.com**
 ├── src/
 │   ├── components/
 │   ├── data/
-│   │   ├── pay-scales/           # Raw OPM pay tables, one file per year (manual)
+│   │   ├── pay-scales/           # Converted OPM pay tables (JSON), one file per year (manual)
+│   │   ├── raw/                  # Original OPM Excel downloads, kept for provenance (manual)
 │   │   └── tsp/                  # Raw TSP price history CSV (fetched daily)
 │   ├── layouts/
 │   ├── lib/                      # Pure calculation logic, one module per calculator
@@ -83,12 +84,30 @@ The site has two data pipelines, with very different update processes because of
 
 OPM publishes new General Schedule pay tables annually (typically effective each January) as an **Excel workbook**, not JSON and not a feed anything can poll. There's no automation for this — it's a manual step when a new year's rates are published:
 
-1. Download the new year's GS pay table from OPM as Excel (`.xlsx`).
-2. Convert it to JSON: `python3 scripts/opm-convert.py paytable.xlsx` (requires `pip install pandas openpyxl`). See the script's header comment for the expected output shape and a caveat about multi-sheet workbooks.
-3. Move/rename the result to `src/data/pay-scales/YYYY-general-schedule-pay-rates.json`.
-4. That's it. `npm run build` (and therefore every deploy) runs `scripts/build-pay-lookup.mjs`, which auto-discovers every file in `src/data/pay-scales/` and regenerates the compact lookups in `public/pay-scales/` — no code changes needed for a new year.
+1. Download the new year's GS pay table from OPM as Excel. Recent years (~2016+) are `.xlsx`; older years OPM published as legacy binary `.xls` — both work, but need different pandas engines (next step).
+2. One-time environment setup, if you haven't done this before:
+   ```sh
+   python3 -m venv .venv
+   .venv/bin/pip install pandas openpyxl xlrd   # openpyxl → .xlsx, xlrd → .xls
+   ```
+   (`.venv/` is gitignored. On Homebrew Python, a bare `pip install` outside a venv fails with an "externally-managed-environment" error — don't reach for `--break-system-packages`, just use the venv.)
+3. Convert it to JSON: `.venv/bin/python3 scripts/opm-convert.py paytable.xlsx`. See the script's header comment for the expected output shape and a caveat about multi-sheet workbooks.
+4. **Verify before trusting the output** — see "Verifying a conversion" below. OPM's file shape has drifted before (locality-area realignments changing the row count) without raising any error, so a silent bad conversion is possible.
+5. Keep the original download for provenance: move it to `src/data/raw/YYYY-general-schedule-pay-rates.xls` (or `.xlsx`).
+6. Move/rename the converted JSON to `src/data/pay-scales/YYYY-general-schedule-pay-rates.json`.
+7. **If this year is earlier than the current `FIRST_PAY_YEAR` or later than `LAST_PAY_YEAR`** (in `src/lib/payLookup.ts`), update those two constants. This step is easy to forget and the failure mode is silent: `build-pay-lookup.mjs` auto-discovers every file in `src/data/pay-scales/` regardless, so the new year's JSON is generated and served correctly either way — but `SalaryLookup.tsx` and `high3.ts` both build their year lists from `FIRST_PAY_YEAR`/`LAST_PAY_YEAR`, not from what data actually exists, so a year outside that range just never appears in the UI even though its JSON 200s fine. (This is exactly what happened backfilling 2011–2014.) A year filling a *gap* inside the existing range — e.g. 2015 — needs no code change; a missing year's fetch just 404s and is treated as "no data," not an error.
+8. `npm run build` (and therefore every deploy) runs `scripts/build-pay-lookup.mjs`, which regenerates the compact lookups in `public/pay-scales/` from everything in `src/data/pay-scales/`.
 
 Run `npm run generate:pay` locally to regenerate `public/pay-scales/` without a full build.
+
+#### Verifying a conversion
+
+Before moving a new year's JSON into `src/data/pay-scales/`, check it against a neighboring year you already trust:
+
+- **Input shape**: same sheet name (`ALL_GS`) and same 32 columns (`LOCNAME`, `GRADE`, `ANNUAL1..10`, `HOURLY1..10`, `OVERTIME1..10`) as an adjacent year's raw file. A changed column set means OPM changed their template and `opm-convert.py`'s column assumptions need a look.
+- **Output shape**: grades 1–15, 10 steps per grade, no unexpected nulls.
+- **Locality set diff** against the adjacent year: some churn (a handful of codes added/removed) is normal — OPM periodically realigns locality-pay areas — but wholesale differences mean something's wrong with the read.
+- **A known-value spot check**: look up the same locality/grade/step (e.g. `RUS` — Rest of US — GS-1 Step 1) across a few consecutive years and eyeball the trend. It should track known history — e.g. federal pay was frozen 2011–2013, so that value should be *identical* across those three years and then move in 2014.
 
 ### TSP Fund Prices — automated, daily
 

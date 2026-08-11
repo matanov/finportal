@@ -12,9 +12,20 @@ year's file from OPM" and "drop the JSON into src/data/pay-scales/".
 
 Usage:
     python3 scripts/opm-convert.py paytable.xlsx
-    python3 scripts/opm-convert.py paytable.xlsx output.json
+    python3 scripts/opm-convert.py paytable.xls output.json
 
-Requires pandas and an Excel engine: pip install pandas openpyxl
+Requires pandas and an Excel engine. OPM's older pay tables (roughly
+pre-2016) are published as legacy binary .xls, not .xlsx — pandas needs
+different engines for each, so install both:
+    pip install pandas openpyxl xlrd   # openpyxl reads .xlsx, xlrd reads .xls
+
+On a Homebrew Python install, a bare `pip install` will likely refuse with
+an "externally-managed-environment" error (PEP 668). Use a project-local
+venv instead of --break-system-packages:
+    python3 -m venv .venv
+    .venv/bin/pip install pandas openpyxl xlrd
+    .venv/bin/python3 scripts/opm-convert.py paytable.xlsx
+(.venv/ is already gitignored.)
 
 Output shape:
     { "<worksheet name>": [
@@ -29,11 +40,22 @@ if that ever changes, either re-export just the sheet that matters or
 merge the sheets before dropping the JSON in.
 
 After conversion:
-    1. Rename/move the output to
+    1. Keep the original download too: rename/move it to
+       src/data/raw/YYYY-general-schedule-pay-rates.xls(x) for provenance.
+    2. Rename/move the JSON output to
        src/data/pay-scales/YYYY-general-schedule-pay-rates.json
        (the leading year is how build-pay-lookup.mjs discovers new years).
-    2. Run `npm run generate:pay` (or just `npm run build`, which runs it
+    3. Run `npm run generate:pay` (or just `npm run build`, which runs it
        automatically) to regenerate public/pay-scales/.
+    4. If YYYY falls outside [FIRST_PAY_YEAR, LAST_PAY_YEAR] in
+       src/lib/payLookup.ts, update those two constants — see the comment
+       there for why this step is easy to skip and silently breaks the UI.
+
+Before trusting the output, sanity-check it against neighboring years —
+see "Verifying a conversion" in the README's GS Pay Scales section for
+the checklist (column/sheet shape, locality set diff, a known-value
+spot check). Don't skip this: OPM's file shape has drifted before
+(locality area realignments) without any error being raised.
 """
 
 import json
