@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import FeedbackWidget from '../components/FeedbackWidget';
 
 interface Props {
   title?: string;
@@ -38,6 +39,7 @@ const {
   </head>
   <body>
     <slot />
+    <FeedbackWidget client:load />
     <script
       is:inline
       type="text/javascript"

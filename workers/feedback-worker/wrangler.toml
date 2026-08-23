@@ -1,0 +1,19 @@
+name = "fersmath-feedback"
+main = "src/index.ts"
+compatibility_date = "2026-08-12"
+
+# Non-secret configuration. GITHUB_TOKEN is set separately as a secret:
+#   wrangler secret put GITHUB_TOKEN
+[vars]
+GITHUB_OWNER = "matanov"
+GITHUB_REPO = "finportal"
+# Comma-separated list of origins allowed to call this worker from a browser.
+ALLOWED_ORIGINS = "https://fersmath.com,http://localhost:4321"
+RATE_LIMIT_MAX = "5"
+RATE_LIMIT_WINDOW_SECONDS = "3600"
+
+# Created via: wrangler kv namespace create RATE_LIMIT
+# Replace `id` below with the id it prints.
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "24ae06649e354e1e86fbc7fc838cd50e"

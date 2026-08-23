@@ -1,6 +1,9 @@
 # build output
 dist/
 
+# Wrangler local dev state (workers/feedback-worker) — KV emulation, cache
+.wrangler/
+
 # generated types
 .astro/
 

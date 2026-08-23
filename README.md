@@ -45,13 +45,20 @@ Live site: **https://fersmath.com**
 /
 ├── .github/
 │   └── workflows/
-│       ├── deploy.yml            # Build + deploy to GitHub Pages, on every push to main
-│       └── update-tsp-data.yml   # Daily: fetch TSP prices, rebuild lookups, commit + redeploy
+│       ├── deploy.yml               # Build + deploy to GitHub Pages, on push to main (ignores feedback/**)
+│       ├── update-tsp-data.yml      # Daily: fetch TSP prices, rebuild lookups, commit + redeploy
+│       └── consolidate-feedback.yml # Daily: roll feedback/inbox/*.json into feedback/log.jsonl
 ├── scripts/
 │   ├── opm-convert.py            # OPM Excel pay table -> JSON (manual, run once per new year)
 │   ├── build-pay-lookup.mjs      # src/data/pay-scales/*.json  -> public/pay-scales/*.json
 │   ├── fetch-tsp-prices.mjs      # tsp.gov CSV -> src/data/tsp/fund-price-history.csv
-│   └── build-tsp-lookup.mjs      # src/data/tsp/*.csv -> public/tsp/*.json
+│   ├── build-tsp-lookup.mjs      # src/data/tsp/*.csv -> public/tsp/*.json
+│   └── consolidate-feedback.mjs  # feedback/inbox/*.json -> feedback/log.jsonl (run daily by Actions)
+├── workers/
+│   └── feedback-worker/          # Cloudflare Worker behind the feedback form — see its own README
+├── feedback/
+│   ├── inbox/                    # One file per submission, written by the worker, consolidated daily
+│   └── log.jsonl                 # All feedback, one JSON object per line
 ├── public/
 ├── src/
 │   ├── components/
@@ -119,6 +126,47 @@ TSP.gov publishes a full daily price-history CSV, which is fetchable, so this pi
 - Because that commit is authored by the workflow's own `GITHUB_TOKEN`, it does **not** auto-trigger `deploy.yml` (GitHub blocks that specific chain to prevent workflow recursion) — `update-tsp-data.yml` explicitly re-dispatches `deploy.yml` itself whenever it pushes new data, so a successful fetch always ends in a live redeploy.
 
 No manual steps are needed under normal operation. To run either script locally: `npm run fetch:tsp && npm run generate:tsp`.
+
+## Feedback Widget
+
+Every page has a small floating feedback form (`src/components/FeedbackWidget.tsx`,
+bottom-right corner). There's no database behind it — submissions are
+committed straight into this repo:
+
+```
+Browser  →  Cloudflare Worker  →  GitHub Contents API  →  feedback/inbox/*.json
+                (honeypot +                                        │
+                 rate limit)                    daily GitHub Action │ rolls up
+                                                                     ▼
+                                                          feedback/log.jsonl
+```
+
+- **`workers/feedback-worker/`** — the Cloudflare Worker the form POSTs to.
+  It checks a honeypot field, rate-limits by IP (Workers KV), validates the
+  message (required, ≤900 characters), then writes the submission as its
+  own new file under `feedback/inbox/` via the GitHub API, authenticated
+  with a fine-grained PAT scoped only to this repo's Contents permission.
+  One file per submission (rather than appending to a shared file) avoids
+  concurrent writes racing on a git blob SHA.
+- **`.github/workflows/consolidate-feedback.yml`** runs daily, rolling every
+  file in `feedback/inbox/` into `feedback/log.jsonl` (one JSON object per
+  line, oldest first) and deleting the now-consolidated inbox files.
+- **`.github/workflows/deploy.yml`** has `paths-ignore: feedback/**` — the
+  worker's commits use a real PAT rather than the Actions-internal
+  `GITHUB_TOKEN`, so GitHub's usual anti-recursion guard doesn't apply and
+  every submission would otherwise trigger a full site rebuild.
+- **No CAPTCHA** (e.g. Cloudflare Turnstile) — a deliberate choice to avoid
+  the extra setup step; the honeypot + rate limit are considered enough for
+  the expected volume. This can be revisited if spam becomes a real problem.
+- **No submitter IP is ever committed** — this repo is public, and IPs only
+  ever live transiently in Workers KV (with a TTL) for rate limiting.
+
+Full operational detail — local dev, deploying the worker, and (important)
+**how to rotate the GitHub token before it expires** — is in
+[`workers/feedback-worker/README.md`](workers/feedback-worker/README.md).
+That token can have an expiration date; GitHub emails a warning about a
+week beforehand, and there's no other alerting on it, so that email is the
+signal to act on.
 
 ## Deployment
 

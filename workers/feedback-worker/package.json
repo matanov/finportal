@@ -1,0 +1,15 @@
+{
+  "name": "fersmath-feedback-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260823.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.125.0"
+  }
+}

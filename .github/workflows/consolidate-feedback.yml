@@ -1,0 +1,43 @@
+name: Consolidate Feedback
+
+on:
+  schedule:
+    # Daily. Offset from the TSP update's 13:00 UTC just to spread load —
+    # the two workflows are unrelated. A no-op when the inbox is empty.
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: consolidate-feedback
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    name: Roll up inbox into log
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Consolidate feedback inbox into log
+        run: node scripts/consolidate-feedback.mjs
+
+      - name: Commit and push if there was new feedback
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add feedback/
+          if git diff --cached --quiet; then
+            echo "No new feedback — nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore: consolidate feedback"
+          git push

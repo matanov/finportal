@@ -3,6 +3,12 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # The feedback worker commits each submission straight to main with a
+    # real token (not the default GITHUB_TOKEN, so GitHub's anti-recursion
+    # guard doesn't apply) — without this, every feedback submission would
+    # trigger a full site rebuild + redeploy.
+    paths-ignore:
+      - 'feedback/**'
   workflow_dispatch:
 
 permissions:
