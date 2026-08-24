@@ -1,7 +1,0 @@
-{
-  "id": "2026-08-23T16-42-53-899Z-7b491083",
-  "timestamp": "2026-08-23T16:42:53.899Z",
-  "name": null,
-  "email": null,
-  "message": "This is a feedback without a name and without an email. To test to make sure there is no error functionality in this case. We will aslo see if the consolidation fires correctly"
-}
