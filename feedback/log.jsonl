@@ -2,3 +2,4 @@
 {"id":"2026-08-23T16-42-53-899Z-7b491083","timestamp":"2026-08-23T16:42:53.899Z","name":null,"email":null,"message":"This is a feedback without a name and without an email. To test to make sure there is no error functionality in this case. We will aslo see if the consolidation fires correctly"}
 {"id":"2026-08-23T16-46-39-498Z-74927dcc","timestamp":"2026-08-23T16:46:39.498Z","name":"Jackson","email":"jack@test.com","message":"This is a test with all fields available to test the consolidation. Will see how that worked."}
 {"id":"2026-08-23T21-55-06-934Z-2afad25a","timestamp":"2026-08-23T21:55:06.934Z","name":"Chickenman","email":"outlay_stand2s@icloud.com","message":"This is the third submission for the day to see them egging pulled together."}
+{"id":"2026-08-24T18-07-33-634Z-4b1d1af6","timestamp":"2026-08-24T18:07:33.634Z","name":"Panto test","email":null,"message":"Adding another comment first three aggregated fine"}
