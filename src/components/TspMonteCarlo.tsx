@@ -707,7 +707,9 @@ function TspMonteCarloInner() {
         }}
       >
         <strong style={{ color: "#64748b" }}>Disclaimer:</strong> This tool simulates {TRIALS.toLocaleString()} possible
-        futures by resampling actual historical monthly returns since May 2003 — it is not a prediction. It does not
+        futures by resampling actual historical monthly returns for each fund back to its real inception (G Fund since
+        1987, F and C Fund since 1988, S and I Fund since 2001) — not a fixed starting date. Returns are TSP's own
+        published monthly figures before June 2003 and daily-derived after. This is not a prediction. It does not
         model future contributions, withdrawals, taxes, or fees. Past performance does not guarantee future results.
       </div>
     </div>

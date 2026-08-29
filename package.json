@@ -9,6 +9,7 @@
     "generate:pay": "node scripts/build-pay-lookup.mjs",
     "generate:tsp": "node scripts/build-tsp-lookup.mjs",
     "fetch:tsp": "node scripts/fetch-tsp-prices.mjs",
+    "fetch:tsp:historical": "node scripts/fetch-tsp-historical-returns.mjs",
     "consolidate:feedback": "node scripts/consolidate-feedback.mjs",
     "prebuild": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",
     "predev": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",

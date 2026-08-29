@@ -127,6 +127,15 @@ TSP.gov publishes a full daily price-history CSV, which is fetchable, so this pi
 
 No manual steps are needed under normal operation. To run either script locally: `npm run fetch:tsp && npm run generate:tsp`.
 
+#### Pre-2003 history (real data, manual, essentially one-time)
+
+`fund-price-history.csv` only goes back to TSP's May 2003 share-price rebasing (every fund reset to $10.0000 that day when TSP changed bookkeeping systems) — not each fund's actual inception. The real funds are older: **G Fund since 4/1987, F and C Fund since 1/1988, S and I Fund since 5/2001.** TSP still publishes real monthly (not daily) returns for that whole earlier period on their `/fund-performance/` page.
+
+- **`scripts/fetch-tsp-historical-returns.mjs`** pulls that real monthly-return history via the same internal endpoint that page's own JS uses (`getMonthlyReturnsSummary.csv` — not a documented public API, discovered from the page's `rates-of-returns.js`), through 2003-05 inclusive — the exact month that ends at the daily series' $10.00 anchor, so the two datasets meet with no gap or overlap. Output: `src/data/tsp/monthly-returns-pre2003.csv`. It sanity-checks the result against each fund's known real inception month before writing, and refuses to write if TSP's format or history has changed unexpectedly.
+- This is **not part of the daily automation** — unlike share prices, TSP isn't going to revise 1987–2003 monthly returns, so there's nothing to keep polling for. Re-run it manually only if TSP's page structure changes and the file needs regenerating.
+- **`build-tsp-lookup.mjs`** merges this into `public/tsp/monthly-returns.json` every time it runs (including in the daily automation above — no workflow changes were needed for this, it just reads one more, unchanging, already-committed input file). The merged file gets a `dailyDataFrom` field (currently `"2003-06"`) marking where real-but-monthly-resolution data ends and real-daily-derived data begins, so consumers can disclose the resolution change.
+- This only feeds the **Monte Carlo bootstrap**, not the historic price chart (`TspPerformance.tsx`) — that chart's x-axis spaces points by index, not elapsed time, so mixing in sparser monthly points would visually compress decades of real history into what looks like a few months. Extending the chart itself would need a real rework of its axis, not just more data, so it's out of scope here.
+
 ## Feedback Widget
 
 Every page has a small floating feedback form (`src/components/FeedbackWidget.tsx`,
