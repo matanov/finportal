@@ -76,6 +76,8 @@ function percentile(sorted: number[], p: number): number {
 
 type SimResult = {
   poolSize: number;
+  poolStart: string | null;
+  poolEnd: string | null;
   years: number[];
   bands: { p10: number; p25: number; p50: number; p75: number; p90: number }[];
   reference: number[];
@@ -161,10 +163,22 @@ function runSimulation({
 
   return {
     poolSize: poolIndices.length,
+    // poolIndices is built in ascending order, so the first/last entries are
+    // the earliest/latest eligible month — i.e. the actual shared-history
+    // window used for this specific fund selection.
+    poolStart: poolIndices.length > 0 ? monthlyReturns.months[poolIndices[0]] : null,
+    poolEnd: poolIndices.length > 0 ? monthlyReturns.months[poolIndices[poolIndices.length - 1]] : null,
     years: Array.from({ length: horizonYears + 1 }, (_, y) => y),
     bands,
     reference,
   };
+}
+
+/** "2005-08" -> "Aug 2005" */
+function formatMonth(yyyyMm: string): string {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [y, m] = yyyyMm.split("-");
+  return `${months[Number(m) - 1]} ${y}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -336,11 +350,22 @@ function MoneyInput({
   );
 }
 
-function FundRow({ slug, value, onChange }: { slug: string; value: number; onChange: (v: number) => void }) {
+function FundRow({
+  slug,
+  value,
+  onChange,
+  sinceYear,
+}: {
+  slug: string;
+  value: number;
+  onChange: (v: number) => void;
+  sinceYear?: string;
+}) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
       <label htmlFor={`bal-${slug}`} style={{ flex: 1, fontSize: "0.85rem", color: "#1e293b" }}>
         {fundLabel(slug)}
+        {sinceYear && <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}> (since {sinceYear})</span>}
       </label>
       <div style={{ width: "130px", flexShrink: 0 }}>
         <MoneyInput id={`bal-${slug}`} ariaLabel={`${fundLabel(slug)} balance`} value={value} onChange={onChange} />
@@ -441,6 +466,18 @@ function TspMonteCarloInner() {
 
   const { core, lifecycle } = monthlyReturns ? sortFunds(monthlyReturns.funds) : { core: [], lifecycle: [] };
 
+  // Each fund's real starting year, shown next to its label so it's clear
+  // upfront why combining an older fund with a newer one narrows the pool.
+  const fundSinceYear = useMemo(() => {
+    if (!monthlyReturns) return {};
+    const map: Record<string, string> = {};
+    for (const slug of monthlyReturns.funds) {
+      const i = monthlyReturns.returns[slug].findIndex((v) => v !== null);
+      if (i !== -1) map[slug] = monthlyReturns.months[i].slice(0, 4);
+    }
+    return map;
+  }, [monthlyReturns]);
+
   // Derived from `result` (the debounced simulation output), never from the
   // live `horizonYears` — the two can briefly disagree while a recompute is
   // pending, and indexing result.bands with an out-of-range live year was
@@ -463,8 +500,10 @@ function TspMonteCarloInner() {
         </h1>
         <p style={{ color: "#64748b", lineHeight: 1.6 }}>
           Enter today's balances and see a range of simulated future outcomes, built by resampling real historical
-          months across your held funds together — not one fund at a time. Assumes no future contributions or
-          withdrawals.
+          months across your held funds together — not one fund at a time. Each fund's history goes back to its own
+          real inception (the G Fund all the way to 1987) rather than a single fixed start date — mixing an older
+          fund with a newer one narrows the simulation to the months they both actually existed. Assumes no future
+          contributions or withdrawals.
         </p>
       </div>
 
@@ -488,7 +527,13 @@ function TspMonteCarloInner() {
           }}
         >
           {[...core, ...lifecycle].map((slug) => (
-            <FundRow key={slug} slug={slug} value={balances[slug] ?? 0} onChange={(v) => setBalance(slug, v)} />
+            <FundRow
+              key={slug}
+              slug={slug}
+              value={balances[slug] ?? 0}
+              onChange={(v) => setBalance(slug, v)}
+              sinceYear={fundSinceYear[slug]}
+            />
           ))}
         </div>
 
@@ -626,6 +671,13 @@ function TspMonteCarloInner() {
                 </span>
               </div>
             </div>
+
+            {result.poolStart && result.poolEnd && (
+              <p style={{ margin: "0 0 1rem", fontSize: "0.78rem", color: "#94a3b8" }}>
+                Using {result.poolSize.toLocaleString()} months of shared historical data across your selected funds,{" "}
+                {formatMonth(result.poolStart)} – {formatMonth(result.poolEnd)}.
+              </p>
+            )}
 
             <FanChart result={result} />
 
