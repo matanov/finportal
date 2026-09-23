@@ -4,6 +4,8 @@
  * TSP Projection Calculator: inputs only so far.
  *   - Current balances: one row per fund holding (fund, amount, Roth or
  *     Traditional), starting with a single C Fund row; "+ Add fund" adds more.
+ *   - Contributions: annual salary and the percent of it contributed, with
+ *     the current IRS limits shown alongside.
  *   - Future allocation: how new contributions are split across funds, one
  *     row per fund, which must add up to 100%.
  *   - Projection horizon: a fixed list of year spans.
@@ -14,10 +16,12 @@
 import { useEffect, useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
 import {
+  CONTRIBUTION_LIMITS,
   DEFAULT_FUND,
   DEFAULT_HORIZON,
   FALLBACK_FUNDS,
   HORIZON_OPTIONS,
+  annualContribution,
   checkAllocation,
   fundLabel,
   newId,
@@ -203,6 +207,9 @@ function TspProjectionInner() {
     { id: "a-0", fund: DEFAULT_FUND, percent: 100 },
   ]);
   const [horizon, setHorizon] = useState(DEFAULT_HORIZON);
+  const [salary, setSalary] = useState(0);
+  // Most FERS employees contribute 5%, the level that earns the full agency match.
+  const [contribPct, setContribPct] = useState(5);
 
   // The live fund list (new L funds appear over time); the fallback covers
   // the first render and any fetch failure.
@@ -220,6 +227,8 @@ function TspProjectionInner() {
   }, []);
 
   const summary = summarizeHoldings(holdings);
+  const yearlyContribution = annualContribution(salary, contribPct);
+  const overLimit = yearlyContribution > CONTRIBUTION_LIMITS.elective;
   const allocCheck = checkAllocation(allocation);
 
   // --- holdings ------------------------------------------------------------
@@ -339,6 +348,116 @@ function TspProjectionInner() {
               </Row>
             ))}
             <AddButton onClick={addHolding}>Add fund</AddButton>
+          </Card>
+
+          {/* Contributions */}
+          <Card>
+            <CardTitle hint="Your own contributions, as a percent of base salary.">Contributions</CardTitle>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "flex-end" }}>
+              <div style={{ flex: "1 1 180px" }}>
+                <label htmlFor="salary" style={labelStyle}>
+                  Annual salary ($)
+                </label>
+                <input
+                  id="salary"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1000}
+                  placeholder="0"
+                  value={salary === 0 ? "" : salary}
+                  onChange={(e) => setSalary(e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)))}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ flex: "0 1 130px" }}>
+                <label htmlFor="contrib-pct" style={labelStyle}>
+                  Contribution
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    id="contrib-pct"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={100}
+                    step={1}
+                    placeholder="0"
+                    value={contribPct === 0 ? "" : contribPct}
+                    onChange={(e) =>
+                      setContribPct(
+                        e.target.value === "" ? 0 : Math.min(100, Math.max(0, Math.round(Number(e.target.value)))),
+                      )
+                    }
+                    style={{ ...inputStyle, paddingRight: "1.6rem" }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      right: "0.6rem",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "#94a3b8",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    %
+                  </span>
+                </div>
+              </div>
+            </div>
+            {salary > 0 && (
+              <div
+                role="status"
+                style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: overLimit ? "#92400e" : "#1e293b" }}
+              >
+                {fmtMoney(yearlyContribution)} a year
+                {overLimit &&
+                  ` — above the ${CONTRIBUTION_LIMITS.year} limit of ${fmtMoney(CONTRIBUTION_LIMITS.elective)}, so contributions would stop once you reach it (catch-up aside).`}
+              </div>
+            )}
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.75rem 0.9rem",
+                borderRadius: "0.5rem",
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                fontSize: "0.8rem",
+                color: "#475569",
+                lineHeight: 1.6,
+              }}
+            >
+              <div style={{ fontWeight: 700, color: "#1e293b", marginBottom: "0.25rem" }}>
+                {CONTRIBUTION_LIMITS.year} contribution limits
+              </div>
+              <ul style={{ margin: 0, paddingLeft: "1.1rem", listStyle: "disc" }}>
+                <li>
+                  <strong>{fmtMoney(CONTRIBUTION_LIMITS.elective)}</strong> a year of your own contributions,
+                  Traditional and Roth combined. Agency contributions don't count toward it.
+                </li>
+                <li>
+                  Age 50 or older: up to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp50)}</strong> more in catch-up
+                  contributions.
+                </li>
+                <li>
+                  Ages 60 to 63: the catch-up rises to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp60to63)}</strong>.
+                </li>
+                <li>
+                  If you earned more than {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} in the previous
+                  year, catch-up contributions must go in as Roth.
+                </li>
+              </ul>
+              <a
+                href={CONTRIBUTION_LIMITS.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-block", marginTop: "0.35rem", color: "#2A7D9C" }}
+              >
+                Source: TSP contribution limits
+              </a>
+            </div>
           </Card>
 
           {/* Future allocation */}
@@ -466,6 +585,12 @@ function TspProjectionInner() {
             <dd style={{ margin: 0, textAlign: "right" }}>{fmtMoney(summary.traditional)}</dd>
             <dt style={{ color: "#64748b", paddingLeft: "0.75rem" }}>Roth</dt>
             <dd style={{ margin: 0, textAlign: "right" }}>{fmtMoney(summary.roth)}</dd>
+            <dt style={{ color: "#64748b" }}>Salary</dt>
+            <dd style={{ margin: 0, textAlign: "right" }}>{fmtMoney(salary)}</dd>
+            <dt style={{ color: "#64748b" }}>Your contributions</dt>
+            <dd style={{ margin: 0, textAlign: "right", color: overLimit ? "#92400e" : undefined }}>
+              {fmtMoney(yearlyContribution)}/yr ({contribPct}%)
+            </dd>
             <dt style={{ color: "#64748b" }}>Future allocation</dt>
             <dd style={{ margin: 0, textAlign: "right", color: allocCheck.isComplete ? "#166534" : "#92400e", fontWeight: 600 }}>
               {fmtPct(allocCheck.total)}

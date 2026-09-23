@@ -31,6 +31,29 @@ export const HORIZON_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40];
 export const DEFAULT_HORIZON = 20;
 export const DEFAULT_FUND = "C";
 
+/**
+ * IRS limits on employee TSP contributions for one tax year. Update each
+ * November when the IRS announces the next year's figures; the TSP mirrors
+ * them at https://www.tsp.gov/making-contributions/contribution-limits/.
+ */
+export const CONTRIBUTION_LIMITS = {
+  year: 2026,
+  /** Elective deferral limit: Traditional + Roth employee contributions combined */
+  elective: 24_500,
+  /** Extra catch-up allowed from the year you turn 50 */
+  catchUp50: 8_000,
+  /** Higher catch-up for the years you turn 60 through 63 (replaces the age-50 amount) */
+  catchUp60to63: 11_250,
+  /** Prior-year FICA wages above which catch-up contributions must be Roth */
+  rothCatchUpWageThreshold: 150_000,
+  source: "https://www.tsp.gov/making-contributions/contribution-limits/",
+} as const;
+
+/** Employee contributions for a year at a flat percent of salary */
+export function annualContribution(salary: number, percent: number): number {
+  return (Math.max(0, salary || 0) * Math.max(0, percent || 0)) / 100;
+}
+
 /** Used until /tsp/index.json loads, or if it can't be fetched */
 export const FALLBACK_FUNDS = [
   "G", "F", "C", "S", "I",
