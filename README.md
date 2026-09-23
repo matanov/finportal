@@ -18,7 +18,7 @@ All live calculators are listed at **[/calculators](https://fersmath.com/calcula
 | TSP Monte Carlo Projection | `/tsp/monte-carlo` | `public/tsp/*.json` (generated, see below) |
 | FERS Special Retirement Supplement | `/calculator/fers-supplement` | `src/lib/fersSupplement.ts` |
 
-The blog/articles section on the homepage is not live yet — there's no `/blog` route, and the cards are marked "Coming Soon".
+Articles live under `/blog/<slug>` as `.astro` pages in `src/pages/blog/`. Each one is also registered in `src/data/articles.ts` (title, description, category, publish date, read time), which drives the homepage "Latest Articles" cards, the `/blog` list, and the article's own byline and meta tags. To publish a new article, add its page and its entry there.
 
 ## Tech Stack
 

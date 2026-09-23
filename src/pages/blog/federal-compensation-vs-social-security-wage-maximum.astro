@@ -2,14 +2,20 @@
 import Layout from '../../layouts/Layout.astro';
 import WageBaseComparison from '../../components/WageBaseComparison';
 import CareerWageChart from '../../components/CareerWageChart';
+import { articleUrl, formatPublished, getArticle } from '../../data/articles';
+
+const article = getArticle('federal-compensation-vs-social-security-wage-maximum');
+const canonical = new URL(articleUrl(article), Astro.site).href;
 ---
 
-<Layout
-  title="Federal Compensation vs. Social Security Wage Maximum | FersMath"
-  description="Draft placeholder article — not yet published."
->
+<Layout title={`${article.title} | FersMath`} description={article.description}>
   <Fragment slot="head">
-    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={article.title} />
+    <meta property="og:description" content={article.description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="article:published_time" content={article.published} />
   </Fragment>
 
   <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
@@ -19,19 +25,10 @@ import CareerWageChart from '../../components/CareerWageChart';
       <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
         <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
         <span style="margin: 0 0.5rem;">›</span>
-        <a href="/blog" style="color: #2A7D9C; text-decoration: none;">Blog</a>
+        <a href="/blog" style="color: #2A7D9C; text-decoration: none;">Articles</a>
         <span style="margin: 0 0.5rem;">›</span>
-        <span>Federal Compensation vs. Social Security Wage Maximum</span>
+        <span>{article.title}</span>
       </nav>
-
-      <!-- Draft notice -->
-      <div
-        style="display: inline-block; background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
-               font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
-               padding: 0.3rem 0.75rem; border-radius: 999px; margin-bottom: 1.25rem;"
-      >
-        Draft placeholder — not published
-      </div>
 
       <article
         style="background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 2rem 2.25rem;
@@ -39,18 +36,27 @@ import CareerWageChart from '../../components/CareerWageChart';
       >
         <h1
           style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.75rem, 4vw, 2.25rem);
-                 font-weight: 700; color: #0F2244; line-height: 1.25; margin: 0 0 1.5rem;"
+                 font-weight: 700; color: #0F2244; line-height: 1.25; margin: 0 0 0.75rem;"
         >
-          Federal Compensation vs. Social Security Wage Maximum
+          {article.title}
         </h1>
+        <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 1.75rem;">
+          <span style="color: #C9A035; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem;">
+            {article.category}
+          </span>
+          <span style="margin: 0 0.5rem;">·</span>
+          <time datetime={article.published}>{formatPublished(article.published, 'long')}</time>
+          <span style="margin: 0 0.5rem;">·</span>
+          {article.readMinutes} min read
+        </p>
 
         <div class="article-body" style="font-size: 1rem; color: #334155; line-height: 1.75;">
-          <!--
+          {/*
             Article section: Social Security wage base intro + AWI explainer + table.
             Intended placement: opening of the article, before the interactive tool.
             Figures verified against SSA (ssa.gov/OACT/COLA/cbb.html) and the SSA
             Federal Register notice for 2026 (AWI for 2024 = $69,846.57).
-          -->
+          */}
           <p>
             Federal compensation is a hot topic, with endless arguments over whether it is fair, whether it
             rewards performance, and how it stacks up against the private sector. I wanted to offer a

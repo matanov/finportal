@@ -1,6 +1,9 @@
 ---
 // Welcome.astro — Branded homepage for FERSmath
 import CalculatorGrid from './CalculatorGrid.astro';
+import { ARTICLES, articleUrl, formatPublished } from '../data/articles';
+
+const latestArticles = ARTICLES.slice(0, 3);
 ---
 
 <!-- ─── Nav ─────────────────────────────────────────────────────────────── -->
@@ -135,12 +138,7 @@ import CalculatorGrid from './CalculatorGrid.astro';
   style="background-color: var(--color-primary-700); padding: 5rem 1.5rem;"
 >
   <div style="max-width: 1280px; margin: 0 auto;">
-    <div style="text-align: center; margin-bottom: 0;">
-      <span
-        style="display: inline-block; background-color: rgba(255,255,255,0.08); color: var(--color-primary-200); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.3rem 0.9rem; border-radius: var(--radius-full); margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.15);"
-      >
-        Coming Soon
-      </span>
+    <div style="text-align: center; margin-bottom: 3rem;">
       <h2
         style="font-family: var(--font-display); font-size: 2.25rem; font-weight: 700; color: white; margin: 0 0 0.75rem;"
       >
@@ -151,6 +149,44 @@ import CalculatorGrid from './CalculatorGrid.astro';
       >
         Clear, unbiased financial writing — no ads, no sponsored content.
       </p>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 360px)); justify-content: center; gap: 1.5rem;"
+    >
+      {latestArticles.map((article) => (
+        <a
+          href={articleUrl(article)}
+          style="background-color: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 1.75rem; text-decoration: none; display: block;"
+        >
+          <span
+            style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-400);"
+            >{article.category}</span
+          >
+          <h3
+            style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: white; margin: 0.5rem 0 0.75rem; line-height: 1.35;"
+          >
+            {article.title}
+          </h3>
+          <p
+            style="font-size: 0.875rem; color: var(--color-primary-100); line-height: 1.6; margin: 0 0 1.25rem;"
+          >
+            {article.description}
+          </p>
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary-200);"
+          >
+            <span>{formatPublished(article.published)}</span><span>{article.readMinutes} min read</span>
+          </div>
+        </a>
+      ))}
+    </div>
+    <div style="text-align: center; margin-top: 2.5rem;">
+      <a
+        href="/blog"
+        style="display: inline-block; border: 1px solid rgba(255,255,255,0.25); color: white; font-size: 0.875rem; font-weight: 500; padding: 0.75rem 1.75rem; border-radius: var(--radius-md); text-decoration: none;"
+      >
+        View All Articles
+      </a>
     </div>
   </div>
 </section>
