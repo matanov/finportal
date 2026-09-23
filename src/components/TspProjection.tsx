@@ -340,6 +340,8 @@ function BreakdownTable({
         : "Available from age 50"
       : b.rothCatchUpRequired
         ? `Must be Roth: salary over ${fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}`
+        : b.rothCatchUpUnknown
+          ? `Enter your salary: catch-up must be Roth above ${fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}`
         : "Only after the regular limit is full";
 
   /** Pay-period and monthly columns, plus the same figures stacked under the yearly amount on narrow screens */

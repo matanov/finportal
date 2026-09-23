@@ -98,6 +98,8 @@ export interface ContributionBreakdown {
   notContributed: number;
   /** Catch-up has to be Roth: salary (standing in for last year's wages) is over the threshold */
   rothCatchUpRequired: boolean;
+  /** Catch-up applies but no salary was entered, so the Roth catch-up test can't be run */
+  rothCatchUpUnknown: boolean;
   /** Part of the Traditional election that went in as Roth catch-up because of that rule */
   traditionalRedirectedToRoth: number;
   agencyAutomatic: number;
@@ -149,6 +151,7 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
     catchUpRoth: 0,
     notContributed: 0,
     rothCatchUpRequired,
+    rothCatchUpUnknown: catchUpLimit > 0 && salary === 0,
     traditionalRedirectedToRoth: 0,
     agencyAutomatic: 0,
     agencyMatch: 0,
