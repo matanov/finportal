@@ -45,6 +45,7 @@ export default function CareerWageChart() {
 
 function CareerWageChartInner() {
   const [scale, setScale] = useState<Scale>("log");
+  const [tableOpen, setTableOpen] = useState(false);
   const [careers, setCareers] = useState<Careers | null>(null);
   const [state, setState] = useState<LoadState>("loading");
 
@@ -164,63 +165,81 @@ function CareerWageChartInner() {
       />
       <ScaleNote scale={scale} />
 
-      <div style={{ overflowX: "auto", marginTop: "1.25rem" }}>
-        <table
+      <details
+        style={{ marginTop: "1.25rem" }}
+        onToggle={(e) => setTableOpen(e.currentTarget.open)}
+      >
+        <summary
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
+            cursor: "pointer",
             fontSize: "0.85rem",
-            fontVariantNumeric: "tabular-nums",
-            color: "#1e293b",
+            fontWeight: 600,
+            color: "#2A7D9C",
           }}
         >
-          <thead>
-            <tr>
-              <th style={{ ...th, textAlign: "left" }}>Year</th>
-              <th style={th}>Kansas</th>
-              <th style={th}>DC</th>
-              <th style={th}>Wage base</th>
-            </tr>
-          </thead>
-          <tbody>
-            {careers.DCB.map((dc, i) => {
-              const ks = careers.RUS[i];
-              const base = WAGE_BASE[dc.year];
-              return (
-                <tr key={dc.year}>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {dc.year}
-                    <span style={pctStyle}>
-                      GS-{dc.grade}/{dc.step}
-                      {(ks.grade !== dc.grade || ks.step !== dc.step) &&
-                        ` (KS ${ks.grade}/${ks.step})`}
-                    </span>
-                  </td>
-                  <td style={td}>
-                    {fmtMoney(ks.salary)}
-                    {base && (
-                      <span style={pctStyle}>{fmtPct(ks.salary / base, 0)}</span>
-                    )}
-                  </td>
-                  <td style={td}>
-                    {fmtMoney(dc.salary)}
-                    {base && (
-                      <span style={pctStyle}>{fmtPct(dc.salary / base, 0)}</span>
-                    )}
-                  </td>
-                  <td style={td}>{base ? fmtMoney(base) : "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+          {tableOpen ? "Hide" : "Show"} year-by-year data
+        </summary>
+        <div style={{ overflowX: "auto", marginTop: "0.75rem" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.85rem",
+              fontVariantNumeric: "tabular-nums",
+              color: "#1e293b",
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ ...th, textAlign: "left" }}>Year</th>
+                <th style={th}>Kansas</th>
+                <th style={th}>DC</th>
+                <th style={th}>Wage base</th>
+              </tr>
+            </thead>
+            <tbody>
+              {careers.DCB.map((dc, i) => {
+                const ks = careers.RUS[i];
+                const base = WAGE_BASE[dc.year];
+                return (
+                  <tr key={dc.year}>
+                    <td style={{ ...td, textAlign: "left" }}>
+                      {dc.year}
+                      <span style={pctStyle}>
+                        GS-{dc.grade}/{dc.step}
+                        {(ks.grade !== dc.grade || ks.step !== dc.step) &&
+                          ` (KS ${ks.grade}/${ks.step})`}
+                      </span>
+                    </td>
+                    <td style={td}>
+                      {fmtMoney(ks.salary)}
+                      {base && (
+                        <span style={pctStyle}>{fmtPct(ks.salary / base, 0)}</span>
+                      )}
+                    </td>
+                    <td style={td}>
+                      {fmtMoney(dc.salary)}
+                      {base && (
+                        <span style={pctStyle}>{fmtPct(dc.salary / base, 0)}</span>
+                      )}
+                    </td>
+                    <td style={td}>{base ? fmtMoney(base) : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "0.5rem 0 0" }}>
+          Grey figures under each salary are that salary as a share of the
+          year's wage base.
+        </p>
+      </details>
       <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "0.75rem 0 0", lineHeight: 1.5 }}>
         Promotions in 2014, 2017, 2020 and 2023; step increases on the
         standard waiting periods; promotion pay set by the two-step rule.
-        Grey figures under each salary are that salary as a share of the year's wage base. Kansas
-        uses Rest of U.S. locality rates, which apply outside the Kansas City
-        metro.
+        Kansas uses Rest of U.S. locality rates, which apply outside the
+        Kansas City metro.
       </p>
     </div>
   );
