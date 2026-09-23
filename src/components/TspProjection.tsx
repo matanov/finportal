@@ -447,6 +447,25 @@ function BreakdownTable({
           )}
         </tbody>
         <tfoot>
+          {/* Election totals: the Regular / Catch-up rows above split by limit, these add them back up by type */}
+          <tr style={{ background: "#f8fafc" }}>
+            <td style={{ ...td, fontWeight: 600 }}>
+              Your Traditional total
+              <span style={sub}>Regular + catch-up</span>
+            </td>
+            <td style={td}>{tax(false)}</td>
+            <td className="bd-limit-col" style={num} />
+            {amountCells(b.regularTraditional + b.catchUpTraditional, { fontWeight: 600 })}
+          </tr>
+          <tr style={{ background: "#f8fafc" }}>
+            <td style={{ ...td, fontWeight: 600 }}>
+              Your Roth total
+              <span style={sub}>Regular + catch-up</span>
+            </td>
+            <td style={td}>{tax(true)}</td>
+            <td className="bd-limit-col" style={num} />
+            {amountCells(b.regularRoth + b.catchUpRoth, { fontWeight: 600 })}
+          </tr>
           <tr>
             <td style={{ ...td, fontWeight: 700 }} colSpan={2}>
               Total going in
@@ -464,6 +483,33 @@ function BreakdownTable({
         Per pay period and per month are the yearly amount divided by 26 and 12. If you hit your limit early,
         actual paychecks are higher until then and zero after.
       </div>
+      <details style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "#475569", lineHeight: 1.6 }}>
+        <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>How this table works</summary>
+        <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
+          <li>
+            Contributions are worked out paycheck by paycheck over 26 pay periods. Each paycheck is split between
+            Traditional and Roth in the same proportion as your two elections. For example, $20,000 Traditional
+            and $8,000 Roth puts about 71% of every paycheck in Traditional and 29% in Roth.
+          </li>
+          <li>
+            Paychecks fill the regular {fmtMoney(CONTRIBUTION_LIMITS.elective)} limit first. Once it's full,
+            anything more counts as catch-up if you're 50 or older, up to your catch-up limit. After that,
+            contributions stop for the rest of the year.
+          </li>
+          <li>
+            So the <strong>Regular</strong> and <strong>Catch-up</strong> rows show which limit the money counts
+            against, not separate elections. Both rows contain some of each election. Your totals by type are in
+            the <strong>Your Traditional total</strong> and <strong>Your Roth total</strong> lines.
+          </li>
+          <li>
+            If catch-up must be Roth (age 50+ and salary over{" "}
+            {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}), the Traditional part of every catch-up
+            paycheck goes in as Roth. That happens even when your Roth election alone would have covered the
+            catch-up amount, because Roth money in earlier paychecks already counted toward the regular limit.
+          </li>
+          <li>Agency contributions, automatic and matching, always go in as Traditional.</li>
+        </ul>
+      </details>
     </div>
   );
 }
@@ -614,7 +660,9 @@ function ContributionsOverTime({
       <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#94a3b8", lineHeight: 1.5 }}>
         T = Traditional (your Traditional contributions plus all agency money), R = Roth. Running total is starting
         balance plus contributions only, with no investment growth. Salary and the {CONTRIBUTION_LIMITS.year} limits
-        are held flat every year; age moves up one each year, so catch-up starts at 50 and rises at 60 to 63.
+        are held flat every year; age moves up one each year, so catch-up starts at 50 and rises at 60 to 63. "You:
+        Traditional" and "You: Roth" are your totals by type after limits, including any catch-up that had to go in
+        as Roth (see "How this table works" under the one-year breakdown).
       </div>
     </div>
   );
