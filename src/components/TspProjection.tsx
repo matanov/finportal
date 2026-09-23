@@ -25,6 +25,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
 import ProjectionChart from "./ProjectionChart";
+import TspProjectionGuide from "./TspProjectionGuide";
 import { inTodaysDollars, simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
 import {
   CONTRIBUTION_LIMITS,
@@ -1004,6 +1005,8 @@ function TspProjectionInner() {
           how far ahead to project.
         </p>
       </div>
+
+      <TspProjectionGuide />
 
       <div
         style={{

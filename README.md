@@ -16,6 +16,7 @@ All live calculators are listed at **[/calculators](https://fersmath.com/calcula
 | GS Salary History Lookup | `/calculator/salary-lookup` | `src/lib/payLookup.ts` |
 | TSP Fund Performance | `/tsp/performance` | `public/tsp/*.json` (generated, see below) |
 | TSP Monte Carlo Projection | `/tsp/monte-carlo` | `public/tsp/*.json` (generated, see below) |
+| TSP Projection Calculator | `/tsp/projection` | `src/lib/tspProjection.ts` (contribution rules, IRS limits), `src/lib/tspSimulation.ts` (Monte Carlo); tests: `npm run test:tsp`; business logic in [Issue #5](https://github.com/matanov/finportal/issues/5), yearly updates in [Issue #6](https://github.com/matanov/finportal/issues/6) |
 | FERS Special Retirement Supplement | `/calculator/fers-supplement` | `src/lib/fersSupplement.ts` |
 
 Articles are MDX files (Markdown that can also embed the interactive chart components) in an Astro [content collection](https://docs.astro.build/en/guides/content-collections/) — see [Writing Articles](#writing-articles) below.
