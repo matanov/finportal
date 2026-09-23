@@ -75,13 +75,12 @@ export type ContributionMode = "percent" | "dollars";
 
 export interface ContributionInput {
   salary: number;
+  /** Whether the two elections below are percents of pay or dollars per year */
   mode: ContributionMode;
-  /** Used when mode is "percent": share of each paycheck, 0–100 */
-  percent: number;
-  /** Used when mode is "dollars": total per year, spread evenly over the pay periods */
-  dollarsPerYear: number;
-  /** Share of employee contributions elected as Roth, 0–100 */
-  rothPercent: number;
+  /** Traditional election: percent of each paycheck (0–100) or dollars per year, spread over the pay periods */
+  traditional: number;
+  /** Roth election, in the same units as `traditional` */
+  roth: number;
   age: number | null;
 }
 
@@ -99,6 +98,8 @@ export interface ContributionBreakdown {
   notContributed: number;
   /** Catch-up has to be Roth: salary (standing in for last year's wages) is over the threshold */
   rothCatchUpRequired: boolean;
+  /** Part of the Traditional election that went in as Roth catch-up because of that rule */
+  traditionalRedirectedToRoth: number;
   agencyAutomatic: number;
   agencyMatch: number;
   /** Matching lost in pay periods after contributions stopped */
@@ -113,12 +114,12 @@ export interface ContributionBreakdown {
 /**
  * Where a year of contributions goes, worked out pay period by pay period
  * the way the TSP applies an election:
- *   1. Each paycheck's contribution fills the regular (elective) limit first,
- *      split Traditional/Roth by the election.
- *   2. Once that's full, it spills over into catch-up for employees 50 or
- *      older, up to their catch-up limit. Catch-up is all Roth when salary is
- *      above the Roth catch-up wage threshold; otherwise it follows the
- *      election.
+ *   1. Each paycheck's Traditional and Roth elections fill the regular
+ *      (elective) limit first, in proportion to the two elections.
+ *   2. Once that's full, they spill over into catch-up for employees 50 or
+ *      older, up to their catch-up limit, keeping their type — except that
+ *      when salary is above the Roth catch-up wage threshold all catch-up
+ *      goes in as Roth, including what was elected as Traditional.
  *   3. Anything beyond the employee's limit isn't contributed.
  * Agency money is always Traditional: the automatic 1% every pay period,
  * plus matching based on what the employee actually put in that period, so
@@ -127,11 +128,12 @@ export interface ContributionBreakdown {
 export function contributionBreakdown(input: ContributionInput): ContributionBreakdown {
   const salary = Math.max(0, input.salary || 0);
   const pay = salary / PAY_PERIODS;
-  const perPeriod =
-    input.mode === "percent"
-      ? (pay * Math.max(0, input.percent || 0)) / 100
-      : Math.max(0, input.dollarsPerYear || 0) / PAY_PERIODS;
-  const rothShare = Math.min(100, Math.max(0, input.rothPercent || 0)) / 100;
+  const perPeriodOf = (v: number) =>
+    input.mode === "percent" ? (pay * Math.max(0, v || 0)) / 100 : Math.max(0, v || 0) / PAY_PERIODS;
+  const tradPerPeriod = perPeriodOf(input.traditional);
+  const rothPerPeriod = perPeriodOf(input.roth);
+  const perPeriod = tradPerPeriod + rothPerPeriod;
+  const rothShare = perPeriod > 0 ? rothPerPeriod / perPeriod : 0;
 
   const { elective, rothCatchUpWageThreshold } = CONTRIBUTION_LIMITS;
   const { limit, catchUp: catchUpLimit } = employeeLimit(input.age);
@@ -147,6 +149,7 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
     catchUpRoth: 0,
     notContributed: 0,
     rothCatchUpRequired,
+    traditionalRedirectedToRoth: 0,
     agencyAutomatic: 0,
     agencyMatch: 0,
     matchLost: 0,
@@ -167,9 +170,13 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
 
     out.regularRoth += regular * rothShare;
     out.regularTraditional += regular * (1 - rothShare);
-    const catchUpRothShare = rothCatchUpRequired ? 1 : rothShare;
-    out.catchUpRoth += catchUp * catchUpRothShare;
-    out.catchUpTraditional += catchUp * (1 - catchUpRothShare);
+    if (rothCatchUpRequired) {
+      out.catchUpRoth += catchUp;
+      out.traditionalRedirectedToRoth += catchUp * (1 - rothShare);
+    } else {
+      out.catchUpRoth += catchUp * rothShare;
+      out.catchUpTraditional += catchUp * (1 - rothShare);
+    }
     out.notContributed += cut;
     if (cut > 0.005 && out.limitReachedPeriod == null) out.limitReachedPeriod = period;
 

@@ -4,9 +4,9 @@
  * TSP Projection Calculator: inputs only so far.
  *   - Current balances: one row per fund holding (fund, amount, Roth or
  *     Traditional), starting with a single C Fund row; "+ Add fund" adds more.
- *   - Contributions: current age, salary, Roth share, and the contribution
- *     as a percent of salary or a dollar amount per year, with the current
- *     IRS limits alongside.
+ *   - Contributions: current age, salary, and separate Traditional and Roth
+ *     elections (as the TSP takes them), each a percent of salary or a
+ *     dollar amount per year, with the current IRS limits alongside.
  *   - Where your contributions go: a year of contributions split into
  *     regular / catch-up / agency, Traditional vs Roth, with anything over
  *     the limit and any agency match lost by hitting it early.
@@ -207,6 +207,30 @@ function PercentInput({
         %
       </span>
     </div>
+  );
+}
+
+function DollarInput({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <input
+      id={id}
+      type="number"
+      inputMode="decimal"
+      min={0}
+      step={500}
+      placeholder="0"
+      value={value === 0 ? "" : value}
+      onChange={(e) => onChange(e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)))}
+      style={inputStyle}
+    />
   );
 }
 
@@ -468,10 +492,13 @@ function TspProjectionInner() {
   const [age, setAge] = useState<number | null>(null);
   const [salary, setSalary] = useState(0);
   // Most FERS employees contribute 5%, the level that earns the full agency match.
-  const [contribPct, setContribPct] = useState(5);
-  const [contribMode, setContribMode] = useState<ContributionMode>("percent");
-  const [contribDollars, setContribDollars] = useState(0);
+  // Traditional and Roth elections, kept separately per mode so switching % / $ doesn't lose either.
+  // Most FERS employees contribute 5%, the level that earns the full agency match.
+  const [tradPct, setTradPct] = useState(5);
   const [rothPct, setRothPct] = useState(0);
+  const [tradDollars, setTradDollars] = useState(0);
+  const [rothDollars, setRothDollars] = useState(0);
+  const [contribMode, setContribMode] = useState<ContributionMode>("percent");
 
   // The live fund list (new L funds appear over time); the fallback covers
   // the first render and any fetch failure.
@@ -493,9 +520,8 @@ function TspProjectionInner() {
   const breakdown = contributionBreakdown({
     salary,
     mode: contribMode,
-    percent: contribPct,
-    dollarsPerYear: contribDollars,
-    rothPercent: rothPct,
+    traditional: contribMode === "percent" ? tradPct : tradDollars,
+    roth: contribMode === "percent" ? rothPct : rothDollars,
     age,
   });
   const overLimit = breakdown.notContributed > 0.5;
@@ -661,50 +687,40 @@ function TspProjectionInner() {
                   style={inputStyle}
                 />
               </div>
-              <div style={{ flex: "0 1 130px" }}>
-                <label htmlFor="roth-pct" style={labelStyle}>
-                  Roth share
-                </label>
-                <PercentInput id="roth-pct" value={rothPct} onChange={setRothPct} />
-              </div>
+            </div>
+            <div style={{ marginTop: "0.9rem" }}>
+              <span style={labelStyle}>Contribute as</span>
+              <ModeToggle mode={contribMode} onChange={setContribMode} />
             </div>
             <div
-              style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "flex-end", marginTop: "0.9rem" }}
+              style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "flex-end", marginTop: "0.75rem" }}
             >
-              <div>
-                <span style={labelStyle}>Contribute as</span>
-                <ModeToggle mode={contribMode} onChange={setContribMode} />
+              <div style={{ flex: "1 1 140px" }}>
+                <label htmlFor="contrib-trad" style={labelStyle}>
+                  Traditional {contribMode === "percent" ? "(%)" : "($ per year)"}
+                </label>
+                {contribMode === "percent" ? (
+                  <PercentInput id="contrib-trad" value={tradPct} onChange={setTradPct} />
+                ) : (
+                  <DollarInput id="contrib-trad" value={tradDollars} onChange={setTradDollars} />
+                )}
               </div>
-              {contribMode === "percent" ? (
-                <div style={{ flex: "0 1 130px" }}>
-                  <label htmlFor="contrib-pct" style={labelStyle}>
-                    Contribution
-                  </label>
-                  <PercentInput id="contrib-pct" value={contribPct} onChange={setContribPct} />
-                </div>
-              ) : (
-                <div style={{ flex: "0 1 160px" }}>
-                  <label htmlFor="contrib-dollars" style={labelStyle}>
-                    Amount per year ($)
-                  </label>
-                  <input
-                    id="contrib-dollars"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step={500}
-                    placeholder="0"
-                    value={contribDollars === 0 ? "" : contribDollars}
-                    onChange={(e) =>
-                      setContribDollars(e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)))
-                    }
-                    style={inputStyle}
-                  />
-                </div>
-              )}
+              <div style={{ flex: "1 1 140px" }}>
+                <label htmlFor="contrib-roth" style={labelStyle}>
+                  Roth {contribMode === "percent" ? "(%)" : "($ per year)"}
+                </label>
+                {contribMode === "percent" ? (
+                  <PercentInput id="contrib-roth" value={rothPct} onChange={setRothPct} />
+                ) : (
+                  <DollarInput id="contrib-roth" value={rothDollars} onChange={setRothDollars} />
+                )}
+              </div>
             </div>
-            <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
-              Roth share is the part of your own contributions you elect as Roth; the rest is Traditional.
+            <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+              {contribMode === "percent"
+                ? `Total ${tradPct + rothPct}% of salary${salary > 0 ? `, ${fmtMoney(breakdown.requested)} a year` : ""}.`
+                : `Total ${fmtMoney(tradDollars + rothDollars)} a year.`}{" "}
+              Traditional and Roth are separate elections but share one limit.
             </div>
             <div
               style={{
@@ -927,6 +943,26 @@ function TspProjectionInner() {
         ) : (
           <BreakdownTable breakdown={breakdown} age={age} />
         )}
+        {breakdown.traditionalRedirectedToRoth > 0.5 && (
+          <div
+            role="status"
+            style={{
+              marginTop: "0.9rem",
+              padding: "0.7rem 0.9rem",
+              borderRadius: "0.5rem",
+              background: "#ecfdf5",
+              border: "1px solid #a7f3d0",
+              color: "#065f46",
+              fontSize: "0.83rem",
+              lineHeight: 1.55,
+            }}
+          >
+            <strong>{fmtMoney(breakdown.traditionalRedirectedToRoth)}</strong> of your Traditional election goes in as
+            Roth. At {age} you're making catch-up contributions, and with a salary over{" "}
+            {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} catch-up has to be Roth, so everything above the{" "}
+            {fmtMoney(CONTRIBUTION_LIMITS.elective)} regular limit is Roth regardless of how it was elected.
+          </div>
+        )}
         {overLimit && (
           <div
             role="status"
@@ -949,7 +985,11 @@ function TspProjectionInner() {
                 Agency matching stops with your contributions, which costs{" "}
                 <strong>{fmtMoney(breakdown.matchLost)}</strong> of match.
                 {salary > 0 && spreadPct >= 5 && (
-                  <> Contributing {spreadPct}% instead spreads the limit across the whole year and keeps the full match.</>
+                  <>
+                    {" "}
+                    Contributing {spreadPct}% in total instead spreads the limit across the whole year and keeps the
+                    full match.
+                  </>
                 )}
               </>
             )}
