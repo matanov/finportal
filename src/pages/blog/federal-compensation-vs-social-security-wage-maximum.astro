@@ -42,24 +42,97 @@ import Layout from '../../layouts/Layout.astro';
           Federal Compensation vs. Social Security Wage Maximum
         </h1>
 
-        <div style="font-size: 1rem; color: #334155; line-height: 1.75;">
+        <div class="article-body" style="font-size: 1rem; color: #334155; line-height: 1.75;">
+          <!--
+            Article section: Social Security wage base intro + AWI explainer + table.
+            Intended placement: opening of the article, before the interactive tool.
+            Figures verified against SSA (ssa.gov/OACT/COLA/cbb.html) and the SSA
+            Federal Register notice for 2026 (AWI for 2024 = $69,846.57).
+          -->
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-            laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-            voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+            Federal compensation is a hot topic, with endless arguments over whether it is fair, whether it
+            rewards performance, and how it stacks up against the private sector. I wanted to offer a
+            perspective and an interactive tool comparing federal salaries against a common nationwide
+            benchmark: the Social Security wage base.
           </p>
           <p>
-            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim
-            id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-            doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
-            architecto beatae vitae dicta sunt explicabo.
+            Let's briefly cover what the wage base is. For practical purposes it represents the maximum
+            amount of wages subject to Social Security tax in a given year. Wages below the threshold are
+            taxed at 6.2% paid by the employee and matched by another 6.2% paid by the employer — 12.4% in
+            total, and the self-employed pay the entire 12.4% themselves. Wages above the threshold are not
+            taxed for Social Security at all. Not to be confused with Medicare: the Medicare portion of your
+            payroll tax has no cap whatsoever. It runs at 1.45% employee and 1.45% employer on every dollar
+            you earn, with an additional 0.9% employee-only surtax on wages above $200,000 (single) or
+            $250,000 (married filing jointly). So when high earners cross the wage base in the fall and see
+            their take-home pay jump, the jump is only the Social Security piece stopping — Medicare keeps
+            withholding all year. The wage base is also the ceiling on earnings that count toward your
+            eventual benefit, which is why SSA formally calls it the contribution and benefit base. And it is
+            indexed annually. As a rule of thumb, if you are earning wages above the annual threshold, you
+            are doing pretty well — only about 6% of covered workers are.
           </p>
           <p>
-            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia
-            consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est,
-            qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.
+            That annual indexing is worth understanding, because it is what makes the wage base a useful
+            yardstick rather than an arbitrary number. The base is not tied to inflation — it is tied to the
+            National Average Wage Index, or AWI, which is SSA's measure of what American workers actually
+            earn. SSA computes it from aggregate net compensation reported on W-2s and tax returns divided by
+            the number of workers, then applies that year-over-year percentage change to the prior year's AWI
+            value rather than using the raw per-capita figure directly. The AWI for 2024 was $69,846.57, and
+            that is the figure that set the 2026 wage base, because it takes roughly two years for the IRS
+            and SSA to collect and finalize wage data from every American's tax return, so the indexing
+            always runs on a two-year lag. There is one more wrinkle: the base only rises in years when a
+            cost-of-living adjustment is payable. No COLA means no increase, which is why the base sat frozen
+            at $106,800 from 2009 through 2011 and at $118,500 for 2015 and 2016 — and why it then jumped
+            sharply once indexing resumed. The practical upshot is that the wage base tracks national wage
+            growth, with a lag and an occasional pause. That makes it a reasonable, politically neutral proxy
+            for what the country as a whole is earning, which is exactly what we need to compare federal
+            salaries against.
           </p>
+
+          <!-- Wage base table -->
+          <figure style="margin: 2rem 0;">
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums;">
+                <thead>
+                  <tr><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: left; color: #0F2244; font-weight: 600;">Year</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Wage base</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Change ($)</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Change (%)</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2011</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$106,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2012</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$110,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.09%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2013</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$113,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,600</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.27%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2014</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$117,000</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+2.90%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2015</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+1.28%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2016</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$0</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">0.00%<sup><a href="#fn-1" id="fnref-1" style="color: #2A7D9C; text-decoration: none;">[1]</a></sup></td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2017</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$127,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$8,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+7.34%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2018</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$128,400</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+0.94%<sup><a href="#fn-2" id="fnref-2" style="color: #2A7D9C; text-decoration: none;">[2]</a></sup></td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2019</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$132,900</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.50%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2020</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$137,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.61%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2021</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$142,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$5,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.70%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2022</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$147,000</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+2.94%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2023</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$160,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$13,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+8.98%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2024</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$168,600</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$8,400</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+5.24%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2025</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$176,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$7,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+4.45%</td></tr>
+                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2026</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$184,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$8,400</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+4.77%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <figcaption style="margin-top: 0.75rem; font-size: 0.85rem; font-style: italic; color: #64748b;">
+              Social Security wage base and annual change, 2011–2026. Source: SSA, Contribution and Benefit
+              Base. Average annual increase over the period: 3.71%.
+            </figcaption>
+          </figure>
+
+          <!-- Footnotes -->
+          <ol style="list-style: decimal; margin: 0 0 2rem; padding-left: 1.25rem; font-size: 0.85rem; color: #64748b; line-height: 1.6;">
+            <li id="fn-1">
+              No cost-of-living adjustment was payable for 2016, so the base could not rise. The same rule
+              held it flat for 2010 and 2011.
+              <a href="#fnref-1" style="color: #2A7D9C; text-decoration: none;">↩</a>
+            </li>
+            <li id="fn-2">
+              The 2017 increase absorbed the catch-up from the 2016 freeze, leaving little movement for 2018.
+              <a href="#fnref-2" style="color: #2A7D9C; text-decoration: none;">↩</a>
+            </li>
+          </ol>
 
           <!-- Graph placeholder -->
           <div
@@ -70,18 +143,6 @@ import Layout from '../../layouts/Layout.astro';
               [ Graph placeholder ]
             </span>
           </div>
-
-          <p>
-            Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi
-            ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate
-            velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas
-            nulla pariatur.
-          </p>
-          <p>
-            At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium
-            voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati
-            cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi.
-          </p>
 
           <!-- Calculator placeholder -->
           <div
@@ -110,3 +171,9 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </main>
 </Layout>
+
+<style>
+  .article-body p {
+    margin: 0 0 1.25rem;
+  }
+</style>
