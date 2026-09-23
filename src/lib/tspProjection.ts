@@ -273,3 +273,57 @@ export function checkAllocation(rows: AllocationRow[]): AllocationCheck {
     duplicates: [...duplicates],
   };
 }
+
+export interface ContributionYear {
+  year: number;
+  /** Age during this year, or null if no age was entered */
+  age: number | null;
+  catchUpEligible: boolean;
+  /** Employee money that lands in the Traditional balance (regular + catch-up) */
+  employeeTraditional: number;
+  /** Employee money that lands in the Roth balance (regular + catch-up) */
+  employeeRoth: number;
+  /** Automatic 1% plus matching, always Traditional */
+  agency: number;
+  total: number;
+  /** Starting balances plus every contribution so far, with no investment growth */
+  cumulativeTraditional: number;
+  cumulativeRoth: number;
+}
+
+/**
+ * Contributions year by year over the horizon, before any investment
+ * growth. Each year re-runs contributionBreakdown() at that year's age, so
+ * catch-up starts at 50 and steps up at 60–63 on its own. Salary and the
+ * IRS limits are held at today's values for now.
+ */
+export function projectContributions(
+  input: ContributionInput,
+  start: { traditional: number; roth: number },
+  years: number,
+  firstYear: number = CONTRIBUTION_LIMITS.year,
+): ContributionYear[] {
+  const rows: ContributionYear[] = [];
+  let cumTrad = start.traditional;
+  let cumRoth = start.roth;
+  for (let i = 0; i < years; i++) {
+    const age = input.age == null ? null : input.age + i;
+    const b = contributionBreakdown({ ...input, age });
+    const employeeTraditional = b.regularTraditional + b.catchUpTraditional;
+    const employeeRoth = b.regularRoth + b.catchUpRoth;
+    cumTrad += employeeTraditional + b.agencyTotal;
+    cumRoth += employeeRoth;
+    rows.push({
+      year: firstYear + i,
+      age,
+      catchUpEligible: b.catchUpLimit > 0,
+      employeeTraditional,
+      employeeRoth,
+      agency: b.agencyTotal,
+      total: b.total,
+      cumulativeTraditional: cumTrad,
+      cumulativeRoth: cumRoth,
+    });
+  }
+  return rows;
+}

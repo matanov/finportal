@@ -10,6 +10,8 @@
  *   - Where your contributions go: a year of contributions split into
  *     regular / catch-up / agency, Traditional vs Roth, with anything over
  *     the limit and any agency match lost by hitting it early.
+ *   - Contributions over the horizon: starting balances plus each year's
+ *     contributions at that year's age, before any investment growth.
  *   - Future allocation: how new contributions are split across funds, one
  *     row per fund, which must add up to 100%.
  *   - Projection horizon: a fixed list of year spans.
@@ -31,9 +33,11 @@ import {
   fundLabel,
   newId,
   orderFunds,
+  projectContributions,
   summarizeHoldings,
   type AllocationRow,
   type ContributionMode,
+  type ContributionYear,
   type HoldingRow,
 } from "../lib/tspProjection";
 
@@ -463,6 +467,158 @@ function BreakdownTable({
 }
 
 // ---------------------------------------------------------------------------
+// Year-by-year contributions table
+// ---------------------------------------------------------------------------
+
+function ContributionsOverTime({
+  rows,
+  start,
+}: {
+  rows: ContributionYear[];
+  start: { traditional: number; roth: number };
+}) {
+  const th: React.CSSProperties = {
+    padding: "0.45rem 0.5rem",
+    textAlign: "right",
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    color: "#64748b",
+    borderBottom: "2px solid #e2e8f0",
+    verticalAlign: "bottom",
+  };
+  const td: React.CSSProperties = {
+    padding: "0.4rem 0.5rem",
+    borderBottom: "1px solid #f1f5f9",
+    textAlign: "right",
+    whiteSpace: "nowrap",
+    fontVariantNumeric: "tabular-nums",
+    verticalAlign: "top",
+  };
+  const sub: React.CSSProperties = { display: "block", fontSize: "0.72rem", color: "#94a3b8" };
+  const sum = (f: (r: ContributionYear) => number) => rows.reduce((t, r) => t + f(r), 0);
+  const last = rows[rows.length - 1];
+
+  return (
+    <div style={{ overflowX: "auto", containerType: "inline-size" }}>
+      {/* When narrow, the Traditional / Roth / Agency columns fold under "Added" and the running total */}
+      <style>{`
+        .ot-inline { display: none !important; }
+        @container (max-width: 600px) {
+          .ot-col { display: none; }
+          .ot-inline { display: block !important; }
+          .ot-table th, .ot-table td { padding-left: 0.3rem !important; padding-right: 0.3rem !important; }
+          .ot-split { display: block; }
+          .ot-sep { display: none; }
+        }
+      `}</style>
+      <table
+        className="ot-table"
+        style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", color: "#1e293b" }}
+      >
+        <thead>
+          <tr>
+            <th style={{ ...th, textAlign: "left" }}>Year</th>
+            <th style={{ ...th, textAlign: "left" }}>Age</th>
+            <th className="ot-col" style={th}>
+              You: Traditional
+            </th>
+            <th className="ot-col" style={th}>
+              You: Roth
+            </th>
+            <th className="ot-col" style={th}>
+              Agency
+            </th>
+            <th style={th}>Added</th>
+            <th style={th}>Running total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ background: "#f8fafc" }}>
+            <td style={{ ...td, textAlign: "left", fontWeight: 600 }} colSpan={2}>
+              Starting balance
+            </td>
+            <td className="ot-col" style={td} colSpan={3} />
+            <td style={td} />
+            <td style={{ ...td, fontWeight: 600 }}>
+              {fmtMoney(start.traditional + start.roth)}
+              <span style={sub}>
+                <span className="ot-split">T {fmtMoney(start.traditional)}</span>
+                <span className="ot-sep"> · </span>
+                <span className="ot-split">R {fmtMoney(start.roth)}</span>
+              </span>
+            </td>
+          </tr>
+          {rows.map((r) => (
+            <tr key={r.year}>
+              <td style={{ ...td, textAlign: "left" }}>{r.year}</td>
+              <td style={{ ...td, textAlign: "left" }}>
+                {r.age ?? "—"}
+                {r.catchUpEligible && (
+                  <span style={{ ...sub, color: "#047857" }}>catch-up</span>
+                )}
+              </td>
+              <td className="ot-col" style={td}>
+                {fmtMoney(r.employeeTraditional)}
+              </td>
+              <td className="ot-col" style={td}>
+                {fmtMoney(r.employeeRoth)}
+              </td>
+              <td className="ot-col" style={td}>
+                {fmtMoney(r.agency)}
+              </td>
+              <td style={td}>
+                {fmtMoney(r.total)}
+                <span className="ot-inline" style={sub}>
+                  T {fmtMoney(r.employeeTraditional + r.agency)}
+                </span>
+                <span className="ot-inline" style={sub}>
+                  R {fmtMoney(r.employeeRoth)}
+                </span>
+              </td>
+              <td style={td}>
+                {fmtMoney(r.cumulativeTraditional + r.cumulativeRoth)}
+                <span style={sub}>
+                  <span className="ot-split">T {fmtMoney(r.cumulativeTraditional)}</span>
+                  <span className="ot-sep"> · </span>
+                  <span className="ot-split">R {fmtMoney(r.cumulativeRoth)}</span>
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td style={{ ...td, textAlign: "left", fontWeight: 700 }} colSpan={2}>
+              {rows.length}-year total
+            </td>
+            <td className="ot-col" style={{ ...td, fontWeight: 700 }}>
+              {fmtMoney(sum((r) => r.employeeTraditional))}
+            </td>
+            <td className="ot-col" style={{ ...td, fontWeight: 700 }}>
+              {fmtMoney(sum((r) => r.employeeRoth))}
+            </td>
+            <td className="ot-col" style={{ ...td, fontWeight: 700 }}>
+              {fmtMoney(sum((r) => r.agency))}
+            </td>
+            <td style={{ ...td, fontWeight: 700 }}>{fmtMoney(sum((r) => r.total))}</td>
+            <td style={{ ...td, fontWeight: 700 }}>
+              {last ? fmtMoney(last.cumulativeTraditional + last.cumulativeRoth) : "—"}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#94a3b8", lineHeight: 1.5 }}>
+        T = Traditional (your Traditional contributions plus all agency money), R = Roth. Running total is starting
+        balance plus contributions only, with no investment growth. Salary and the {CONTRIBUTION_LIMITS.year} limits
+        are held flat every year; age moves up one each year, so catch-up starts at 50 and rises at 60 to 63.
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -517,14 +673,17 @@ function TspProjectionInner() {
 
   const summary = summarizeHoldings(holdings);
   const { limit: myLimit, catchUp } = employeeLimit(age);
-  const breakdown = contributionBreakdown({
+  const contributionInput = {
     salary,
     mode: contribMode,
     traditional: contribMode === "percent" ? tradPct : tradDollars,
     roth: contribMode === "percent" ? rothPct : rothDollars,
     age,
-  });
+  };
+  const breakdown = contributionBreakdown(contributionInput);
   const overLimit = breakdown.notContributed > 0.5;
+  const startBalances = { traditional: summary.traditional, roth: summary.roth };
+  const yearRows = projectContributions(contributionInput, startBalances, horizon);
   // Highest whole percent that stays within the limit all year, so the match isn't cut off early
   const spreadPct = salary > 0 ? Math.floor((myLimit / salary) * 100) : 0;
   const allocCheck = checkAllocation(allocation);
@@ -1004,6 +1163,20 @@ function TspProjectionInner() {
               </>
             )}
           </div>
+        )}
+      </Card>
+
+      {/* Contributions over the horizon */}
+      <Card style={{ marginTop: "1.5rem" }}>
+        <CardTitle hint="What goes in each year, starting from today's balances. Investment growth isn't included yet.">
+          Contributions over {horizon} years
+        </CardTitle>
+        {salary === 0 && contribMode === "percent" && summary.total === 0 ? (
+          <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+            Enter your balances and salary to see contributions year by year.
+          </div>
+        ) : (
+          <ContributionsOverTime rows={yearRows} start={startBalances} />
         )}
       </Card>
     </div>
