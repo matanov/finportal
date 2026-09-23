@@ -185,3 +185,67 @@
     box-sizing: border-box;
   }
 }
+
+/* ── Print ──────────────────────────────────────────────────────────────────
+   Every page prints with the browser's own dialog (Print or Save as PDF).
+   .no-print     hidden on paper (floating widgets, buttons, breadcrumbs)
+   .screen-only  the interactive version of something that has a print twin
+   .print-only   hidden on screen, shown on paper (e.g. the TSP Projection report)
+   Layout.astro opens every <details> while printing so nothing stays collapsed. */
+
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+
+  html,
+  body,
+  main {
+    background: #fff !important;
+  }
+
+  main {
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print,
+  .screen-only,
+  .bmc-btn-container,
+  #bmc-wbtn {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  table,
+  figure,
+  svg,
+  tr {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Article tables collapsed to recent rows print in full */
+  .ct-collapsed .ct-older {
+    display: revert !important;
+  }
+
+  .ct-toggle {
+    display: none !important;
+  }
+}

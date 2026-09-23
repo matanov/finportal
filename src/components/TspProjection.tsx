@@ -26,6 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
 import ProjectionChart from "./ProjectionChart";
 import TspProjectionGuide from "./TspProjectionGuide";
+import TspProjectionReport from "./TspProjectionReport";
 import { inTodaysDollars, simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
 import {
   CONTRIBUTION_LIMITS,
@@ -994,12 +995,50 @@ function TspProjectionInner() {
       ? { text: `${fmtPct(allocCheck.total)} allocated, ${fmtPct(remaining)} left`, color: "#92400e", bg: "#fffbeb" }
       : { text: `${fmtPct(allocCheck.total)} allocated, ${fmtPct(-remaining)} over`, color: "#991b1b", bg: "#fef2f2" };
 
+  const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+  const electionText =
+    contribMode === "percent"
+      ? `${tradPct}% Traditional + ${rothPct}% Roth of salary`
+      : `${usd(tradDollars)} Traditional + ${usd(rothDollars)} Roth per year`;
+
   return (
-    <div style={{ fontFamily: "Inter, system-ui, sans-serif", maxWidth: "980px", margin: "0 auto", padding: "1.5rem" }}>
+    <>
+    <div
+      className="screen-only"
+      style={{ fontFamily: "Inter, system-ui, sans-serif", maxWidth: "980px", margin: "0 auto", padding: "1.5rem" }}
+    >
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#0F2244", marginBottom: "0.5rem" }}>
-          TSP Projection Calculator
-        </h1>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.5rem" }}>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#0F2244", margin: 0 }}>
+            TSP Projection Calculator
+          </h1>
+          <button
+            type="button"
+            className="no-print"
+            onClick={() => window.print()}
+            title="Print a one-page summary of your inputs and projection, or choose Save as PDF in the print dialog"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              padding: "0.45rem 0.9rem",
+              border: "1px solid #cbd5e1",
+              borderRadius: "0.5rem",
+              background: "#fff",
+              color: "#0F2244",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9V2h12v7" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Print / Save as PDF
+          </button>
+        </div>
         <p style={{ color: "#64748b", lineHeight: 1.6 }}>
           Enter what you hold in the TSP today and how you want future contributions split across funds, then pick
           how far ahead to project.
@@ -1685,5 +1724,23 @@ function TspProjectionInner() {
         )}
       </Card>
     </div>
+    <TspProjectionReport
+      holdings={holdings}
+      balances={summary}
+      age={age}
+      salary={salary}
+      electionText={electionText}
+      allocation={allocation}
+      horizon={horizon}
+      retireAge={retireAge}
+      retireIndex={retireIndex}
+      todaysDollars={todaysDollars}
+      inflationPct={inflationPct}
+      firstYear={CONTRIBUTION_LIMITS.year}
+      breakdown={breakdown}
+      yearRows={yearRows}
+      result={shown}
+    />
+    </>
   );
 }

@@ -56,6 +56,8 @@ export default function ProjectionChart({
   firstYear,
   startAge,
   retireIndex = null,
+  fixedWidth,
+  printMode = false,
 }: {
   result: SimulationResult;
   /** Calendar year of index 0 (today); index i is January of firstYear + i */
@@ -63,13 +65,17 @@ export default function ProjectionChart({
   startAge: number | null;
   /** Year index at which contributions stop, drawn as a marker */
   retireIndex?: number | null;
+  /** Draw at this width instead of measuring the container (the print report) */
+  fixedWidth?: number;
+  /** Static chart for printing: no hover tooltip and no "Show the numbers" table */
+  printMode?: boolean;
 }) {
   const [containerRef, containerWidth] = useWidth<HTMLDivElement>(760);
   const [hover, setHover] = useState<number | null>(null);
 
   const { bands, contributed } = result;
   const n = bands.length - 1;
-  const width = Math.max(containerWidth, 280);
+  const width = Math.max(fixedWidth ?? containerWidth, 280);
   const compact = width < 520;
   const height = compact ? 260 : 320;
   const labelW = compact ? 64 : 104;
@@ -173,9 +179,9 @@ export default function ProjectionChart({
           aria-label={`Projected TSP balance over ${n} years: average ${fmtMoney(p50[n])}, below average ${fmtMoney(
             p25[n],
           )}, above average ${fmtMoney(p75[n])}, against ${fmtMoney(contributed[n])} put in.`}
-          onPointerMove={onPointer}
-          onPointerDown={onPointer}
-          onPointerLeave={() => setHover(null)}
+          onPointerMove={printMode ? undefined : onPointer}
+          onPointerDown={printMode ? undefined : onPointer}
+          onPointerLeave={printMode ? undefined : () => setHover(null)}
         >
           {ticks.map((t) => (
             <g key={t}>
@@ -293,6 +299,7 @@ export default function ProjectionChart({
       </div>
 
       {/* Same numbers as a table */}
+      {!printMode && (
       <details style={{ marginTop: "0.6rem" }}>
         <summary style={{ cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, color: "#2A7D9C" }}>
           Show the numbers
@@ -353,6 +360,7 @@ export default function ProjectionChart({
           </table>
         </div>
       </details>
+      )}
     </div>
   );
 }
