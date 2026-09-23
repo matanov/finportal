@@ -4,10 +4,12 @@
  * TSP Projection Calculator: inputs only so far.
  *   - Current balances: one row per fund holding (fund, amount, Roth or
  *     Traditional), starting with a single C Fund row; "+ Add fund" adds more.
- *   - Contributions: current age, annual salary and the percent of it
- *     contributed, with the current IRS limits shown alongside. Age sets
- *     the catch-up the person qualifies for (and will drive tax treatment
- *     in the projection).
+ *   - Contributions: current age, salary, Roth share, and the contribution
+ *     as a percent of salary or a dollar amount per year, with the current
+ *     IRS limits alongside.
+ *   - Where your contributions go: a year of contributions split into
+ *     regular / catch-up / agency, Traditional vs Roth, with anything over
+ *     the limit and any agency match lost by hitting it early.
  *   - Future allocation: how new contributions are split across funds, one
  *     row per fund, which must add up to 100%.
  *   - Projection horizon: a fixed list of year spans.
@@ -23,14 +25,15 @@ import {
   DEFAULT_HORIZON,
   FALLBACK_FUNDS,
   HORIZON_OPTIONS,
-  annualContribution,
   checkAllocation,
+  contributionBreakdown,
   employeeLimit,
   fundLabel,
   newId,
   orderFunds,
   summarizeHoldings,
   type AllocationRow,
+  type ContributionMode,
   type HoldingRow,
 } from "../lib/tspProjection";
 
@@ -165,6 +168,85 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
   );
 }
 
+function PercentInput({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={100}
+        step={1}
+        placeholder="0"
+        value={value === 0 ? "" : value}
+        onChange={(e) =>
+          onChange(e.target.value === "" ? 0 : Math.min(100, Math.max(0, Math.round(Number(e.target.value)))))
+        }
+        style={{ ...inputStyle, paddingRight: "1.6rem" }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: "0.6rem",
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "#94a3b8",
+          fontSize: "0.85rem",
+        }}
+      >
+        %
+      </span>
+    </div>
+  );
+}
+
+function ModeToggle({ mode, onChange }: { mode: ContributionMode; onChange: (m: ContributionMode) => void }) {
+  const options: { value: ContributionMode; label: string }[] = [
+    { value: "percent", label: "% of salary" },
+    { value: "dollars", label: "$ per year" },
+  ];
+  return (
+    <div
+      role="group"
+      aria-label="Contribute as"
+      style={{ display: "inline-flex", border: "1px solid #e2e8f0", borderRadius: "0.375rem", overflow: "hidden" }}
+    >
+      {options.map((o) => {
+        const active = o.value === mode;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(o.value)}
+            style={{
+              padding: "0.35rem 0.75rem",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              background: active ? "#0F2244" : "#fff",
+              color: active ? "#fff" : "#64748b",
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Row layout shared by both lists: wraps onto two lines on narrow screens */
 function Row({ children }: { children: React.ReactNode }) {
   return (
@@ -179,6 +261,179 @@ function Row({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Contribution breakdown table
+// ---------------------------------------------------------------------------
+
+function BreakdownTable({
+  breakdown: b,
+  age,
+}: {
+  breakdown: ReturnType<typeof contributionBreakdown>;
+  age: number | null;
+}) {
+  const th: React.CSSProperties = {
+    padding: "0.45rem 0.5rem",
+    textAlign: "left",
+    fontSize: "0.7rem",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    color: "#64748b",
+    borderBottom: "2px solid #e2e8f0",
+  };
+  const td: React.CSSProperties = { padding: "0.45rem 0.5rem", borderBottom: "1px solid #f1f5f9", verticalAlign: "top" };
+  const num: React.CSSProperties = { ...td, textAlign: "right", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
+  const sub: React.CSSProperties = { display: "block", fontSize: "0.75rem", color: "#94a3b8" };
+  const tax = (roth: boolean) => (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "0.05rem 0.45rem",
+        borderRadius: "999px",
+        fontSize: "0.72rem",
+        fontWeight: 600,
+        background: roth ? "#ecfdf5" : "#eff6ff",
+        color: roth ? "#047857" : "#1d4ed8",
+      }}
+    >
+      {roth ? "Roth" : "Traditional"}
+    </span>
+  );
+
+  const catchUpNote =
+    b.catchUpLimit === 0
+      ? age == null
+        ? "Enter your age to check catch-up eligibility"
+        : "Available from age 50"
+      : b.rothCatchUpRequired
+        ? `Must be Roth: salary over ${fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}`
+        : "Only after the regular limit is full";
+
+  /** Pay-period and monthly columns, plus the same figures stacked under the yearly amount on narrow screens */
+  const amountCells = (amount: number, style?: React.CSSProperties) => (
+    <>
+      <td className="bd-split-col" style={{ ...num, color: "#64748b", ...style }}>
+        {fmtMoney(amount / 26)}
+      </td>
+      <td className="bd-split-col" style={{ ...num, color: "#64748b", ...style }}>
+        {fmtMoney(amount / 12)}
+      </td>
+      <td style={{ ...num, ...style }}>
+        {fmtMoney(amount)}
+        <span className="bd-split-inline" style={sub}>
+          {fmtMoney(amount / 26)}/pay
+        </span>
+        <span className="bd-split-inline" style={sub}>
+          {fmtMoney(amount / 12)}/mo
+        </span>
+      </td>
+    </>
+  );
+
+  const rows: { label: string; note: string; roth: boolean | null; limit: string; amount: number; muted?: boolean }[] = [
+    { label: "Regular", note: "Your election", roth: false, limit: fmtMoney(CONTRIBUTION_LIMITS.elective), amount: b.regularTraditional },
+    { label: "Regular", note: "Your election", roth: true, limit: "shared", amount: b.regularRoth },
+    { label: "Catch-up", note: catchUpNote, roth: false, limit: b.catchUpLimit ? fmtMoney(b.catchUpLimit) : "—", amount: b.catchUpTraditional },
+    { label: "Catch-up", note: catchUpNote, roth: true, limit: b.catchUpLimit ? "shared" : "—", amount: b.catchUpRoth },
+    { label: "Agency automatic", note: "1% of pay, even if you contribute nothing", roth: false, limit: "—", amount: b.agencyAutomatic },
+    { label: "Agency match", note: "Up to 4% of pay, on what you put in", roth: false, limit: "—", amount: b.agencyMatch },
+  ];
+
+  return (
+    <div style={{ overflowX: "auto", containerType: "inline-size" }}>
+      {/* When the table is narrow, the pay-period/month columns and then the Limit column
+          fold into small lines under the yearly amount and the row label. */}
+      <style>{`
+        .bd-limit-inline, .bd-split-inline { display: none !important; }
+        @container (max-width: 640px) {
+          .bd-split-col { display: none; }
+          .bd-split-inline { display: block !important; }
+        }
+        @container (max-width: 480px) {
+          .bd-limit-col { display: none; }
+          .bd-limit-inline { display: block !important; }
+          .bd-table th, .bd-table td { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+        }
+      `}</style>
+      <table
+        className="bd-table"
+        style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", color: "#1e293b" }}
+      >
+        <thead>
+          <tr>
+            <th style={th}>Contribution</th>
+            <th style={th}>Tax treatment</th>
+            <th className="bd-limit-col" style={{ ...th, textAlign: "right" }}>
+              Limit
+            </th>
+            <th className="bd-split-col" style={{ ...th, textAlign: "right" }}>
+              Per pay period
+            </th>
+            <th className="bd-split-col" style={{ ...th, textAlign: "right" }}>
+              Per month
+            </th>
+            <th style={{ ...th, textAlign: "right" }}>Per year</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} style={{ opacity: r.amount < 0.5 ? 0.55 : 1 }}>
+              <td style={td}>
+                {r.label}
+                <span style={sub}>{r.note}</span>
+                {r.limit !== "—" && r.limit !== "shared" && (
+                  <span className="bd-limit-inline" style={sub}>
+                    Limit {r.limit}
+                  </span>
+                )}
+              </td>
+              <td style={td}>{r.roth != null && tax(r.roth)}</td>
+              <td className="bd-limit-col" style={{ ...num, color: "#64748b" }}>
+                {r.limit}
+              </td>
+              {amountCells(r.amount)}
+            </tr>
+          ))}
+          {b.notContributed > 0.5 && (
+            <tr>
+              <td style={{ ...td, color: "#92400e" }}>
+                Over your limit
+                <span style={sub}>Elected but not contributed</span>
+                <span className="bd-limit-inline" style={sub}>
+                  Your limit {fmtMoney(b.limit)}
+                </span>
+              </td>
+              <td style={td} />
+              <td className="bd-limit-col" style={{ ...num, color: "#64748b" }}>
+                {fmtMoney(b.limit)}
+              </td>
+              {amountCells(b.notContributed, { color: "#92400e" })}
+            </tr>
+          )}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td style={{ ...td, fontWeight: 700 }} colSpan={2}>
+              Total going in
+              <span style={sub}>
+                Traditional {fmtMoney(b.regularTraditional + b.catchUpTraditional + b.agencyTotal)} · Roth{" "}
+                {fmtMoney(b.regularRoth + b.catchUpRoth)}
+              </span>
+            </td>
+            <td className="bd-limit-col" style={num} />
+            {amountCells(b.total, { fontWeight: 700 })}
+          </tr>
+        </tfoot>
+      </table>
+      <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#94a3b8" }}>
+        Per pay period and per month are the yearly amount divided by 26 and 12. If you hit your limit early,
+        actual paychecks are higher until then and zero after.
+      </div>
     </div>
   );
 }
@@ -214,6 +469,9 @@ function TspProjectionInner() {
   const [salary, setSalary] = useState(0);
   // Most FERS employees contribute 5%, the level that earns the full agency match.
   const [contribPct, setContribPct] = useState(5);
+  const [contribMode, setContribMode] = useState<ContributionMode>("percent");
+  const [contribDollars, setContribDollars] = useState(0);
+  const [rothPct, setRothPct] = useState(0);
 
   // The live fund list (new L funds appear over time); the fallback covers
   // the first render and any fetch failure.
@@ -231,9 +489,18 @@ function TspProjectionInner() {
   }, []);
 
   const summary = summarizeHoldings(holdings);
-  const yearlyContribution = annualContribution(salary, contribPct);
   const { limit: myLimit, catchUp } = employeeLimit(age);
-  const overLimit = yearlyContribution > myLimit;
+  const breakdown = contributionBreakdown({
+    salary,
+    mode: contribMode,
+    percent: contribPct,
+    dollarsPerYear: contribDollars,
+    rothPercent: rothPct,
+    age,
+  });
+  const overLimit = breakdown.notContributed > 0.5;
+  // Highest whole percent that stays within the limit all year, so the match isn't cut off early
+  const spreadPct = salary > 0 ? Math.floor((myLimit / salary) * 100) : 0;
   const allocCheck = checkAllocation(allocation);
 
   // --- holdings ------------------------------------------------------------
@@ -357,7 +624,7 @@ function TspProjectionInner() {
 
           {/* Contributions */}
           <Card>
-            <CardTitle hint="Your own contributions, as a percent of base salary.">Contributions</CardTitle>
+            <CardTitle hint="Your own contributions, as a percent of salary or a dollar amount per year.">Contributions</CardTitle>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "flex-end" }}>
               <div style={{ flex: "0 1 90px" }}>
                 <label htmlFor="age" style={labelStyle}>
@@ -395,52 +662,50 @@ function TspProjectionInner() {
                 />
               </div>
               <div style={{ flex: "0 1 130px" }}>
-                <label htmlFor="contrib-pct" style={labelStyle}>
-                  Contribution
+                <label htmlFor="roth-pct" style={labelStyle}>
+                  Roth share
                 </label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    id="contrib-pct"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={100}
-                    step={1}
-                    placeholder="0"
-                    value={contribPct === 0 ? "" : contribPct}
-                    onChange={(e) =>
-                      setContribPct(
-                        e.target.value === "" ? 0 : Math.min(100, Math.max(0, Math.round(Number(e.target.value)))),
-                      )
-                    }
-                    style={{ ...inputStyle, paddingRight: "1.6rem" }}
-                  />
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      position: "absolute",
-                      right: "0.6rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "#94a3b8",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    %
-                  </span>
-                </div>
+                <PercentInput id="roth-pct" value={rothPct} onChange={setRothPct} />
               </div>
             </div>
-            {salary > 0 && (
-              <div
-                role="status"
-                style={{ marginTop: "0.75rem", fontSize: "0.85rem", color: overLimit ? "#92400e" : "#1e293b" }}
-              >
-                {fmtMoney(yearlyContribution)} a year
-                {overLimit &&
-                  ` — above your ${CONTRIBUTION_LIMITS.year} limit of ${fmtMoney(myLimit)}, so contributions would stop once you reach it.`}
+            <div
+              style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", alignItems: "flex-end", marginTop: "0.9rem" }}
+            >
+              <div>
+                <span style={labelStyle}>Contribute as</span>
+                <ModeToggle mode={contribMode} onChange={setContribMode} />
               </div>
-            )}
+              {contribMode === "percent" ? (
+                <div style={{ flex: "0 1 130px" }}>
+                  <label htmlFor="contrib-pct" style={labelStyle}>
+                    Contribution
+                  </label>
+                  <PercentInput id="contrib-pct" value={contribPct} onChange={setContribPct} />
+                </div>
+              ) : (
+                <div style={{ flex: "0 1 160px" }}>
+                  <label htmlFor="contrib-dollars" style={labelStyle}>
+                    Amount per year ($)
+                  </label>
+                  <input
+                    id="contrib-dollars"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={500}
+                    placeholder="0"
+                    value={contribDollars === 0 ? "" : contribDollars}
+                    onChange={(e) =>
+                      setContribDollars(e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)))
+                    }
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+              Roth share is the part of your own contributions you elect as Roth; the rest is Traditional.
+            </div>
             <div
               style={{
                 marginTop: "1rem",
@@ -470,7 +735,8 @@ function TspProjectionInner() {
                 </li>
                 <li>
                   If you earned more than {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} in the previous
-                  year, catch-up contributions must go in as Roth.
+                  year, catch-up contributions must go in as Roth. This calculator uses your current salary for that
+                  test, since it doesn't ask for last year's wages.
                 </li>
               </ul>
               {age != null && (
@@ -623,8 +889,10 @@ function TspProjectionInner() {
             <dd style={{ margin: 0, textAlign: "right" }}>{fmtMoney(salary)}</dd>
             <dt style={{ color: "#64748b" }}>Your contributions</dt>
             <dd style={{ margin: 0, textAlign: "right", color: overLimit ? "#92400e" : undefined }}>
-              {fmtMoney(yearlyContribution)}/yr ({contribPct}%)
+              {fmtMoney(breakdown.employeeTotal)}/yr
             </dd>
+            <dt style={{ color: "#64748b" }}>Agency contributions</dt>
+            <dd style={{ margin: 0, textAlign: "right" }}>{fmtMoney(breakdown.agencyTotal)}/yr</dd>
             <dt style={{ color: "#64748b" }}>Future allocation</dt>
             <dd style={{ margin: 0, textAlign: "right", color: allocCheck.isComplete ? "#166534" : "#92400e", fontWeight: 600 }}>
               {fmtPct(allocCheck.total)}
@@ -648,6 +916,46 @@ function TspProjectionInner() {
           </div>
         </Card>
       </div>
+
+      {/* Where the money goes */}
+      <Card style={{ marginTop: "1.5rem" }}>
+        <CardTitle hint={`One year of contributions at ${CONTRIBUTION_LIMITS.year} limits, applied paycheck by paycheck over 26 pay periods.`}>
+          Where your contributions go
+        </CardTitle>
+        {salary === 0 && contribMode === "percent" ? (
+          <div style={{ fontSize: "0.85rem", color: "#64748b" }}>Enter your salary to see the breakdown.</div>
+        ) : (
+          <BreakdownTable breakdown={breakdown} age={age} />
+        )}
+        {overLimit && (
+          <div
+            role="status"
+            style={{
+              marginTop: "0.9rem",
+              padding: "0.7rem 0.9rem",
+              borderRadius: "0.5rem",
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              color: "#92400e",
+              fontSize: "0.83rem",
+              lineHeight: 1.55,
+            }}
+          >
+            You'd reach your {fmtMoney(myLimit)} limit in pay period {breakdown.limitReachedPeriod} of 26, so{" "}
+            {fmtMoney(breakdown.notContributed)} of your election isn't contributed.
+            {breakdown.matchLost > 0.5 && (
+              <>
+                {" "}
+                Agency matching stops with your contributions, which costs{" "}
+                <strong>{fmtMoney(breakdown.matchLost)}</strong> of match.
+                {salary > 0 && spreadPct >= 5 && (
+                  <> Contributing {spreadPct}% instead spreads the limit across the whole year and keeps the full match.</>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

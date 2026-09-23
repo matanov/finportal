@@ -61,9 +61,131 @@ export function employeeLimit(age: number | null): { limit: number; catchUp: num
   return { limit: elective + catchUp, catchUp };
 }
 
-/** Employee contributions for a year at a flat percent of salary */
-export function annualContribution(salary: number, percent: number): number {
-  return (Math.max(0, salary || 0) * Math.max(0, percent || 0)) / 100;
+export const PAY_PERIODS = 26;
+
+/** FERS agency contributions: automatic 1% of basic pay, plus matching on the first 5% the employee puts in */
+const AGENCY_AUTOMATIC_PCT = 1;
+
+/** Agency matching for an employee contribution of `pct`% of pay: dollar for dollar on the first 3%, 50 cents on the next 2% */
+function matchPct(pct: number): number {
+  return Math.min(pct, 3) + 0.5 * Math.min(Math.max(pct - 3, 0), 2);
+}
+
+export type ContributionMode = "percent" | "dollars";
+
+export interface ContributionInput {
+  salary: number;
+  mode: ContributionMode;
+  /** Used when mode is "percent": share of each paycheck, 0–100 */
+  percent: number;
+  /** Used when mode is "dollars": total per year, spread evenly over the pay periods */
+  dollarsPerYear: number;
+  /** Share of employee contributions elected as Roth, 0–100 */
+  rothPercent: number;
+  age: number | null;
+}
+
+export interface ContributionBreakdown {
+  /** What the election would put in over a full year with no limit */
+  requested: number;
+  /** The employee's own limit this year (elective + any catch-up) */
+  limit: number;
+  catchUpLimit: number;
+  regularTraditional: number;
+  regularRoth: number;
+  catchUpTraditional: number;
+  catchUpRoth: number;
+  /** Elected but not contributed because the limit was reached */
+  notContributed: number;
+  /** Catch-up has to be Roth: salary (standing in for last year's wages) is over the threshold */
+  rothCatchUpRequired: boolean;
+  agencyAutomatic: number;
+  agencyMatch: number;
+  /** Matching lost in pay periods after contributions stopped */
+  matchLost: number;
+  /** Pay period (1–26) in which contributions were first cut off, or null if never */
+  limitReachedPeriod: number | null;
+  employeeTotal: number;
+  agencyTotal: number;
+  total: number;
+}
+
+/**
+ * Where a year of contributions goes, worked out pay period by pay period
+ * the way the TSP applies an election:
+ *   1. Each paycheck's contribution fills the regular (elective) limit first,
+ *      split Traditional/Roth by the election.
+ *   2. Once that's full, it spills over into catch-up for employees 50 or
+ *      older, up to their catch-up limit. Catch-up is all Roth when salary is
+ *      above the Roth catch-up wage threshold; otherwise it follows the
+ *      election.
+ *   3. Anything beyond the employee's limit isn't contributed.
+ * Agency money is always Traditional: the automatic 1% every pay period,
+ * plus matching based on what the employee actually put in that period, so
+ * hitting the limit early in the year also stops the match.
+ */
+export function contributionBreakdown(input: ContributionInput): ContributionBreakdown {
+  const salary = Math.max(0, input.salary || 0);
+  const pay = salary / PAY_PERIODS;
+  const perPeriod =
+    input.mode === "percent"
+      ? (pay * Math.max(0, input.percent || 0)) / 100
+      : Math.max(0, input.dollarsPerYear || 0) / PAY_PERIODS;
+  const rothShare = Math.min(100, Math.max(0, input.rothPercent || 0)) / 100;
+
+  const { elective, rothCatchUpWageThreshold } = CONTRIBUTION_LIMITS;
+  const { limit, catchUp: catchUpLimit } = employeeLimit(input.age);
+  const rothCatchUpRequired = catchUpLimit > 0 && salary > rothCatchUpWageThreshold;
+
+  const out: ContributionBreakdown = {
+    requested: perPeriod * PAY_PERIODS,
+    limit,
+    catchUpLimit,
+    regularTraditional: 0,
+    regularRoth: 0,
+    catchUpTraditional: 0,
+    catchUpRoth: 0,
+    notContributed: 0,
+    rothCatchUpRequired,
+    agencyAutomatic: 0,
+    agencyMatch: 0,
+    matchLost: 0,
+    limitReachedPeriod: null,
+    employeeTotal: 0,
+    agencyTotal: 0,
+    total: 0,
+  };
+
+  let regularSoFar = 0;
+  let catchUpSoFar = 0;
+  for (let period = 1; period <= PAY_PERIODS; period++) {
+    const regular = Math.min(perPeriod, Math.max(0, elective - regularSoFar));
+    const catchUp = Math.min(perPeriod - regular, Math.max(0, catchUpLimit - catchUpSoFar));
+    const cut = perPeriod - regular - catchUp;
+    regularSoFar += regular;
+    catchUpSoFar += catchUp;
+
+    out.regularRoth += regular * rothShare;
+    out.regularTraditional += regular * (1 - rothShare);
+    const catchUpRothShare = rothCatchUpRequired ? 1 : rothShare;
+    out.catchUpRoth += catchUp * catchUpRothShare;
+    out.catchUpTraditional += catchUp * (1 - catchUpRothShare);
+    out.notContributed += cut;
+    if (cut > 0.005 && out.limitReachedPeriod == null) out.limitReachedPeriod = period;
+
+    if (pay > 0) {
+      out.agencyAutomatic += (pay * AGENCY_AUTOMATIC_PCT) / 100;
+      const actual = (pay * matchPct(((regular + catchUp) / pay) * 100)) / 100;
+      const elected = (pay * matchPct((perPeriod / pay) * 100)) / 100;
+      out.agencyMatch += actual;
+      out.matchLost += elected - actual;
+    }
+  }
+
+  out.employeeTotal = out.regularTraditional + out.regularRoth + out.catchUpTraditional + out.catchUpRoth;
+  out.agencyTotal = out.agencyAutomatic + out.agencyMatch;
+  out.total = out.employeeTotal + out.agencyTotal;
+  return out;
 }
 
 /** Used until /tsp/index.json loads, or if it can't be fetched */
