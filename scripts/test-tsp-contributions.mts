@@ -5,11 +5,14 @@
  * Checks the TSP contribution rules in src/lib/tspProjection.ts against the
  * IRS limits, importing the real module (Node strips the TypeScript types),
  * so there is no copy of the logic to drift out of date:
- *   - regular limit shared by Traditional + Roth, split per the elections
+ *   - both elections are deducted every paycheck until the personal limit,
+ *     so what goes in of each is in proportion to the elections
+ *   - regular limit ($24,500, Traditional + Roth combined) filled by
+ *     Traditional first, then Roth
  *   - catch-up of $8,000 from 50, $11,250 at 60–63, $8,000 again from 64
- *   - catch-up all Roth when salary is over $150,000 (not at exactly $150,000),
- *     including spillover from a Traditional election
- *   - otherwise catch-up follows the elections
+ *   - catch-up all Roth when salary is over $150,000 (not at exactly $150,000):
+ *     Roth contributions count as the catch-up first, and Traditional is moved
+ *     to Roth only for any shortfall
  *   - every elected dollar is either contributed or reported as over the limit
  */
 
@@ -43,6 +46,9 @@ for (const age of ages) {
       const regular = b.regularTraditional + b.regularRoth;
       const catchUp = b.catchUpTraditional + b.catchUpRoth;
       const rothShare = roth / (trad + roth);
+      const contributed = Math.min(requested, L.elective + expectedCatchUp(age));
+      const tradIn = contributed * (1 - rothShare);
+      const rothIn = contributed * rothShare;
 
       expect(near(b.catchUpLimit, expectedCatchUp(age)), `${tag}: catch-up limit ${b.catchUpLimit}`);
       expect(near(regular, Math.min(requested, L.elective)), `${tag}: regular ${regular}`);
@@ -51,22 +57,46 @@ for (const age of ages) {
         `${tag}: catch-up ${catchUp}`,
       );
       expect(near(regular + catchUp + b.notContributed, requested), `${tag}: dollars not conserved`);
-      if (regular > 0) expect(near(b.regularRoth / regular, rothShare), `${tag}: regular split`);
 
       const mustBeRoth = age >= 50 && salary > L.rothCatchUpWageThreshold;
       expect(b.rothCatchUpRequired === mustBeRoth, `${tag}: rothCatchUpRequired=${b.rothCatchUpRequired}`);
+      const moved = mustBeRoth ? Math.max(0, catchUp - rothIn) : 0;
+      expect(near(b.traditionalRedirectedToRoth, moved), `${tag}: moved ${b.traditionalRedirectedToRoth}, expected ${moved}`);
+      expect(
+        near(b.regularTraditional + b.catchUpTraditional, tradIn - moved),
+        `${tag}: Traditional total ${b.regularTraditional + b.catchUpTraditional}`,
+      );
+      expect(near(b.regularRoth + b.catchUpRoth, rothIn + moved), `${tag}: Roth total ${b.regularRoth + b.catchUpRoth}`);
       if (mustBeRoth) {
         expect(near(b.catchUpTraditional, 0), `${tag}: Traditional catch-up despite Roth rule`);
-        expect(
-          near(b.traditionalRedirectedToRoth, catchUp * (1 - rothShare)),
-          `${tag}: redirected ${b.traditionalRedirectedToRoth}`,
-        );
-      } else if (catchUp > 0) {
-        expect(near(b.catchUpRoth / catchUp, rothShare), `${tag}: catch-up split should follow elections`);
-        expect(near(b.traditionalRedirectedToRoth, 0), `${tag}: redirected when not required`);
+      } else {
+        expect(near(b.regularTraditional, Math.min(tradIn, L.elective)), `${tag}: Traditional should fill regular first`);
       }
     }
   }
+}
+
+// --- Specific cases -----------------------------------------------------------
+const byType = (i: Parameters<typeof contributionBreakdown>[0]) => {
+  const b = contributionBreakdown(i);
+  return [b.regularTraditional + b.catchUpTraditional, b.regularRoth + b.catchUpRoth];
+};
+const cases: [string, Parameters<typeof contributionBreakdown>[0], number, number][] = [
+  // Over $150,000: $24,500 Traditional + catch-up as Roth stays as elected
+  ["51, $190k, $24,500 T + $8,000 R", { salary: 190_000, mode: "dollars", traditional: 24_500, roth: 8_000, age: 51 }, 24_500, 8_000],
+  // Over $150,000, all Traditional: the catch-up goes in as Roth automatically
+  ["51, $190k, $32,500 T only", { salary: 190_000, mode: "dollars", traditional: 32_500, roth: 0, age: 51 }, 24_500, 8_000],
+  // Roth short of the catch-up: Traditional covers the rest, moved to Roth
+  ["51, $190k, $30,000 T + $2,500 R", { salary: 190_000, mode: "dollars", traditional: 30_000, roth: 2_500, age: 51 }, 24_500, 8_000],
+  ["61, $190k, $24,500 T + $11,250 R", { salary: 190_000, mode: "dollars", traditional: 24_500, roth: 11_250, age: 61 }, 24_500, 11_250],
+  // $150,000 or less: elections kept as they are
+  ["55, $100k, $24,500 T + $8,000 R", { salary: 100_000, mode: "dollars", traditional: 24_500, roth: 8_000, age: 55 }, 24_500, 8_000],
+  // Under 50 the $24,500 is Traditional + Roth combined, and payroll deducts both each paycheck
+  ["45, $100k, $24,500 T + $5,000 R", { salary: 100_000, mode: "dollars", traditional: 24_500, roth: 5_000, age: 45 }, 24_500 * 24_500 / 29_500, 24_500 * 5_000 / 29_500],
+];
+for (const [label, input, t, r] of cases) {
+  const [gotT, gotR] = byType(input);
+  expect(near(gotT, t) && near(gotR, r), `${label}: got T ${Math.round(gotT)} R ${Math.round(gotR)}, expected T ${Math.round(t)} R ${Math.round(r)}`);
 }
 
 // --- Year by year: 49 → 65 on $200,000, all Traditional ---------------------

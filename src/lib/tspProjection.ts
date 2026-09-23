@@ -114,15 +114,22 @@ export interface ContributionBreakdown {
 }
 
 /**
- * Where a year of contributions goes, worked out pay period by pay period
- * the way the TSP applies an election:
- *   1. Each paycheck's Traditional and Roth elections fill the regular
- *      (elective) limit first, in proportion to the two elections.
- *   2. Once that's full, they spill over into catch-up for employees 50 or
- *      older, up to their catch-up limit, keeping their type — except that
- *      when salary is above the Roth catch-up wage threshold all catch-up
- *      goes in as Roth, including what was elected as Traditional.
- *   3. Anything beyond the employee's limit isn't contributed.
+ * Where a year of contributions goes.
+ *
+ * Timing is worked out pay period by pay period: every paycheck deducts both
+ * elections until the employee's personal limit (regular + any catch-up) is
+ * reached, then contributions stop for the rest of the year. That sets how
+ * much of each election actually goes in and when the agency match stops.
+ *
+ * The split into buckets is then made over the whole year:
+ *   1. Traditional fills the regular (elective) limit first, then Roth.
+ *   2. Anything above the regular limit is catch-up (ages 50+ only).
+ *   3. When catch-up must be Roth (salary above the Roth catch-up wage
+ *      threshold), the employee's Roth contributions count as the catch-up
+ *      first; only if they fall short is the rest of the catch-up taken from
+ *      Traditional and moved to Roth. So electing $24,500 Traditional plus
+ *      the catch-up amount as Roth keeps both as elected, and electing
+ *      everything as Traditional puts the catch-up in as Roth automatically.
  * Agency money is always Traditional: the automatic 1% every pay period,
  * plus matching based on what the employee actually put in that period, so
  * hitting the limit early in the year also stops the match.
@@ -162,34 +169,42 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
     total: 0,
   };
 
-  let regularSoFar = 0;
-  let catchUpSoFar = 0;
+  // Pass 1, pay period by pay period: how much of each election goes in before the limit stops it.
+  let contributedSoFar = 0;
+  let tradIn = 0;
+  let rothIn = 0;
   for (let period = 1; period <= PAY_PERIODS; period++) {
-    const regular = Math.min(perPeriod, Math.max(0, elective - regularSoFar));
-    const catchUp = Math.min(perPeriod - regular, Math.max(0, catchUpLimit - catchUpSoFar));
-    const cut = perPeriod - regular - catchUp;
-    regularSoFar += regular;
-    catchUpSoFar += catchUp;
-
-    out.regularRoth += regular * rothShare;
-    out.regularTraditional += regular * (1 - rothShare);
-    if (rothCatchUpRequired) {
-      out.catchUpRoth += catchUp;
-      out.traditionalRedirectedToRoth += catchUp * (1 - rothShare);
-    } else {
-      out.catchUpRoth += catchUp * rothShare;
-      out.catchUpTraditional += catchUp * (1 - rothShare);
-    }
+    const contributed = Math.min(perPeriod, Math.max(0, limit - contributedSoFar));
+    const cut = perPeriod - contributed;
+    contributedSoFar += contributed;
+    tradIn += contributed * (1 - rothShare);
+    rothIn += contributed * rothShare;
     out.notContributed += cut;
     if (cut > 0.005 && out.limitReachedPeriod == null) out.limitReachedPeriod = period;
 
     if (pay > 0) {
       out.agencyAutomatic += (pay * AGENCY_AUTOMATIC_PCT) / 100;
-      const actual = (pay * matchPct(((regular + catchUp) / pay) * 100)) / 100;
+      const actual = (pay * matchPct((contributed / pay) * 100)) / 100;
       const elected = (pay * matchPct((perPeriod / pay) * 100)) / 100;
       out.agencyMatch += actual;
       out.matchLost += elected - actual;
     }
+  }
+
+  // Pass 2, over the year: sort what went in into regular and catch-up, Traditional first.
+  const catchUp = Math.max(0, tradIn + rothIn - elective);
+  if (rothCatchUpRequired) {
+    // Roth contributions cover the catch-up first; Traditional is moved only for any shortfall.
+    const moved = Math.max(0, catchUp - rothIn);
+    out.traditionalRedirectedToRoth = moved;
+    out.regularTraditional = tradIn - moved;
+    out.regularRoth = rothIn + moved - catchUp;
+    out.catchUpRoth = catchUp;
+  } else {
+    out.regularTraditional = Math.min(tradIn, elective);
+    out.regularRoth = Math.min(rothIn, elective - out.regularTraditional);
+    out.catchUpTraditional = tradIn - out.regularTraditional;
+    out.catchUpRoth = rothIn - out.regularRoth;
   }
 
   out.employeeTotal = out.regularTraditional + out.regularRoth + out.catchUpTraditional + out.catchUpRoth;

@@ -342,7 +342,7 @@ function BreakdownTable({
         ? `Must be Roth: salary over ${fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}`
         : b.rothCatchUpUnknown
           ? `Enter your salary: catch-up must be Roth above ${fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}`
-        : "Only after the regular limit is full";
+        : "Above the regular limit";
 
   /** Pay-period and monthly columns, plus the same figures stacked under the yearly amount on narrow screens */
   const amountCells = (amount: number, style?: React.CSSProperties) => (
@@ -487,25 +487,28 @@ function BreakdownTable({
         <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>How this table works</summary>
         <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
           <li>
-            Contributions are worked out paycheck by paycheck over 26 pay periods. Each paycheck is split between
-            Traditional and Roth in the same proportion as your two elections. For example, $20,000 Traditional
-            and $8,000 Roth puts about 71% of every paycheck in Traditional and 29% in Roth.
+            Payroll takes both of your elections from every paycheck until you reach your limit for the year (
+            {fmtMoney(CONTRIBUTION_LIMITS.elective)}, plus catch-up if you're 50 or older). Then contributions, and
+            the agency match, stop for the rest of the year.
           </li>
           <li>
-            Paychecks fill the regular {fmtMoney(CONTRIBUTION_LIMITS.elective)} limit first. Once it's full,
-            anything more counts as catch-up if you're 50 or older, up to your catch-up limit. After that,
-            contributions stop for the rest of the year.
+            Under 50, the {fmtMoney(CONTRIBUTION_LIMITS.elective)} limit is Traditional and Roth combined. Electing
+            {" "}{fmtMoney(CONTRIBUTION_LIMITS.elective)} Traditional plus some Roth goes over it, so both stop early and
+            you end up with less than {fmtMoney(CONTRIBUTION_LIMITS.elective)} Traditional.
           </li>
           <li>
-            So the <strong>Regular</strong> and <strong>Catch-up</strong> rows show which limit the money counts
-            against, not separate elections. Both rows contain some of each election. Your totals by type are in
-            the <strong>Your Traditional total</strong> and <strong>Your Roth total</strong> lines.
+            Over the year, your Traditional contributions fill the regular {fmtMoney(CONTRIBUTION_LIMITS.elective)}{" "}
+            limit first, then Roth. Anything above {fmtMoney(CONTRIBUTION_LIMITS.elective)} is catch-up (age 50+).
+            The <strong>Regular</strong> and <strong>Catch-up</strong> rows show which limit money counts against;
+            your totals by type are in the <strong>Your Traditional total</strong> and{" "}
+            <strong>Your Roth total</strong> lines.
           </li>
           <li>
             If catch-up must be Roth (age 50+ and salary over{" "}
-            {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}), the Traditional part of every catch-up
-            paycheck goes in as Roth. That happens even when your Roth election alone would have covered the
-            catch-up amount, because Roth money in earlier paychecks already counted toward the regular limit.
+            {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}), your Roth contributions count as the catch-up
+            first. Only if they fall short is the rest taken from Traditional and put in as Roth. So{" "}
+            {fmtMoney(CONTRIBUTION_LIMITS.elective)} Traditional plus your catch-up amount as Roth stays as elected,
+            and electing it all as Traditional puts the catch-up in as Roth automatically.
           </li>
           <li>Agency contributions, automatic and matching, always go in as Traditional.</li>
         </ul>
@@ -1225,9 +1228,10 @@ function TspProjectionInner() {
             }}
           >
             <strong>{fmtMoney(breakdown.traditionalRedirectedToRoth)}</strong> of your Traditional election goes in as
-            Roth. At {age} you're making catch-up contributions, and with a salary over{" "}
-            {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} catch-up has to be Roth, so everything above the{" "}
-            {fmtMoney(CONTRIBUTION_LIMITS.elective)} regular limit is Roth regardless of how it was elected.
+            Roth. At {age} with a salary over {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)}, your{" "}
+            {fmtMoney(breakdown.catchUpRoth)} of catch-up (everything above the{" "}
+            {fmtMoney(CONTRIBUTION_LIMITS.elective)} regular limit) has to be Roth, and your Roth election covers only{" "}
+            {fmtMoney(breakdown.catchUpRoth - breakdown.traditionalRedirectedToRoth)} of it.
           </div>
         )}
         {overLimit && (
