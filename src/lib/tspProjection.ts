@@ -49,6 +49,18 @@ export const CONTRIBUTION_LIMITS = {
   source: "https://www.tsp.gov/making-contributions/contribution-limits/",
 } as const;
 
+/**
+ * Most an employee of this age can contribute this year: the elective limit
+ * plus the catch-up they qualify for. Catch-up eligibility goes by the age
+ * reached by the end of the year, so "age" here means age this year.
+ */
+export function employeeLimit(age: number | null): { limit: number; catchUp: number } {
+  const { elective, catchUp50, catchUp60to63 } = CONTRIBUTION_LIMITS;
+  const catchUp =
+    age == null || age < 50 ? 0 : age >= 60 && age <= 63 ? catchUp60to63 : catchUp50;
+  return { limit: elective + catchUp, catchUp };
+}
+
 /** Employee contributions for a year at a flat percent of salary */
 export function annualContribution(salary: number, percent: number): number {
   return (Math.max(0, salary || 0) * Math.max(0, percent || 0)) / 100;
