@@ -647,6 +647,7 @@ function TspProjectionInner() {
     { id: "a-0", fund: DEFAULT_FUND, percent: 100 },
   ]);
   const [horizon, setHorizon] = useState(DEFAULT_HORIZON);
+  const [yearsOpen, setYearsOpen] = useState(false);
   const [age, setAge] = useState<number | null>(null);
   const [salary, setSalary] = useState(0);
   // Most FERS employees contribute 5%, the level that earns the full agency match.
@@ -1104,6 +1105,53 @@ function TspProjectionInner() {
         </Card>
       </div>
 
+      {/* Contributions over the horizon: summary always visible, year-by-year table collapsed */}
+      <Card style={{ marginTop: "1.5rem" }}>
+        <CardTitle hint="What goes in each year, starting from today's balances. Investment growth isn't included yet.">
+          Contributions over {horizon} years
+        </CardTitle>
+        {salary === 0 && contribMode === "percent" && summary.total === 0 ? (
+          <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+            Enter your balances and salary to see contributions year by year.
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem 1.5rem", fontSize: "0.9rem" }}>
+              <span>
+                <span style={{ color: "#64748b" }}>Contributed: </span>
+                <strong>{fmtMoney(yearRows.reduce((t, r) => t + r.total, 0))}</strong>
+              </span>
+              {yearRows.length > 0 && (
+                <span>
+                  <span style={{ color: "#64748b" }}>Total by {yearRows[yearRows.length - 1].year}, before growth: </span>
+                  <strong>
+                    {fmtMoney(
+                      yearRows[yearRows.length - 1].cumulativeTraditional + yearRows[yearRows.length - 1].cumulativeRoth,
+                    )}
+                  </strong>
+                  <span style={{ color: "#94a3b8" }}>
+                    {" "}
+                    (Traditional {fmtMoney(yearRows[yearRows.length - 1].cumulativeTraditional)} · Roth{" "}
+                    {fmtMoney(yearRows[yearRows.length - 1].cumulativeRoth)})
+                  </span>
+                </span>
+              )}
+            </div>
+            <details
+              style={{ marginTop: "0.9rem" }}
+              onToggle={(e) => setYearsOpen(e.currentTarget.open)}
+            >
+              <summary style={{ cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, color: "#2A7D9C" }}>
+                {yearsOpen ? "Hide" : "Show"} year-by-year table
+              </summary>
+              <div style={{ marginTop: "0.75rem" }}>
+                <ContributionsOverTime rows={yearRows} start={startBalances} />
+              </div>
+            </details>
+          </>
+        )}
+      </Card>
+
       {/* Where the money goes */}
       <Card style={{ marginTop: "1.5rem" }}>
         <CardTitle hint={`One year of contributions at ${CONTRIBUTION_LIMITS.year} limits, applied paycheck by paycheck over 26 pay periods.`}>
@@ -1165,20 +1213,6 @@ function TspProjectionInner() {
               </>
             )}
           </div>
-        )}
-      </Card>
-
-      {/* Contributions over the horizon */}
-      <Card style={{ marginTop: "1.5rem" }}>
-        <CardTitle hint="What goes in each year, starting from today's balances. Investment growth isn't included yet.">
-          Contributions over {horizon} years
-        </CardTitle>
-        {salary === 0 && contribMode === "percent" && summary.total === 0 ? (
-          <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
-            Enter your balances and salary to see contributions year by year.
-          </div>
-        ) : (
-          <ContributionsOverTime rows={yearRows} start={startBalances} />
         )}
       </Card>
     </div>
