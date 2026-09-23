@@ -284,7 +284,7 @@ export default function TspProjectionReport({
           </tr>
         </tbody>
       </table>
-      {(breakdown.notContributed > 0.5 || breakdown.traditionalRedirectedToRoth > 0.5) && (
+      {(breakdown.notContributed > 0.5 || breakdown.matchLost > 0.5 || breakdown.traditionalRedirectedToRoth > 0.5) && (
         <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem", listStyle: "disc", color: "#92400e", fontSize: "8.5pt" }}>
           {breakdown.traditionalRedirectedToRoth > 0.5 && (
             <li>
@@ -296,7 +296,17 @@ export default function TspProjectionReport({
             <li>
               The election reaches the {fmtMoney(breakdown.limit)} limit in pay period {breakdown.limitReachedPeriod};{" "}
               {fmtMoney(breakdown.notContributed)} isn't contributed
-              {breakdown.matchLost > 0.5 ? ` and ${fmtMoney(breakdown.matchLost)} of agency match is lost` : ""}.
+              {breakdown.catchUpLimit === 0 && breakdown.matchLost > 0.5
+                ? ` and ${fmtMoney(breakdown.matchLost)} of agency match is lost`
+                : ""}
+              .
+            </li>
+          )}
+          {breakdown.catchUpLimit > 0 && breakdown.matchLost > 0.5 && (
+            <li>
+              Agency match applies only to regular contributions, not catch-up: it stops when the{" "}
+              {fmtMoney(breakdown.limit - breakdown.catchUpLimit)} regular limit is reached in pay period{" "}
+              {breakdown.regularLimitPeriod}, which loses {fmtMoney(breakdown.matchLost)} of match.
             </li>
           )}
         </ul>
@@ -352,7 +362,7 @@ export default function TspProjectionReport({
       <ul style={{ margin: 0, paddingLeft: "1.1rem", listStyle: "disc", fontSize: "8.5pt", color: "#475569" }}>
         <li>
           Contributions follow the {firstYear} IRS limits ($24,500 regular, plus catch-up from age 50), applied paycheck
-          by paycheck over 26 pay periods, with FERS agency contributions (1% automatic plus up to 4% matching). Salary
+          by paycheck over 26 pay periods, with FERS agency contributions (1% automatic plus up to 4% matching on regular contributions; catch-up is not matched). Salary
           and limits are held flat.
         </li>
         {result && (

@@ -66,7 +66,10 @@ export const PAY_PERIODS = 26;
 /** FERS agency contributions: automatic 1% of basic pay, plus matching on the first 5% the employee puts in */
 const AGENCY_AUTOMATIC_PCT = 1;
 
-/** Agency matching for an employee contribution of `pct`% of pay: dollar for dollar on the first 3%, 50 cents on the next 2% */
+/**
+ * Agency matching for a regular employee contribution of `pct`% of pay: dollar for dollar on the first 3%,
+ * 50 cents on the next 2%. It tops out at 4% of pay, so agency money is at most 5% of pay with the automatic 1%.
+ */
 function matchPct(pct: number): number {
   return Math.min(pct, 3) + 0.5 * Math.min(Math.max(pct - 3, 0), 2);
 }
@@ -104,10 +107,12 @@ export interface ContributionBreakdown {
   traditionalRedirectedToRoth: number;
   agencyAutomatic: number;
   agencyMatch: number;
-  /** Matching lost in pay periods after contributions stopped */
+  /** Matching not earned because the regular limit was reached before the year's last pay period */
   matchLost: number;
-  /** Pay period (1–26) in which contributions were first cut off, or null if never */
+  /** Pay period (1–26) in which contributions were first cut off by the full limit, or null if never */
   limitReachedPeriod: number | null;
+  /** Pay period (1–26) in which the regular limit was reached, so the match stops (catch-up is not matched), or null if never */
+  regularLimitPeriod: number | null;
   employeeTotal: number;
   agencyTotal: number;
   total: number;
@@ -131,8 +136,11 @@ export interface ContributionBreakdown {
  *      the catch-up amount as Roth keeps both as elected, and electing
  *      everything as Traditional puts the catch-up in as Roth automatically.
  * Agency money is always Traditional: the automatic 1% every pay period,
- * plus matching based on what the employee actually put in that period, so
- * hitting the limit early in the year also stops the match.
+ * plus matching based on the REGULAR contribution the employee actually put
+ * in that period. Catch-up contributions are not matched, so the match stops
+ * once the regular limit is reached, even while catch-up keeps going (for
+ * people under 50 that is the same moment contributions stop). Automatic plus
+ * matching never exceeds 5% of pay.
  */
 export function contributionBreakdown(input: ContributionInput): ContributionBreakdown {
   const salary = Math.max(0, input.salary || 0);
@@ -164,27 +172,33 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
     agencyMatch: 0,
     matchLost: 0,
     limitReachedPeriod: null,
+    regularLimitPeriod: null,
     employeeTotal: 0,
     agencyTotal: 0,
     total: 0,
   };
 
   // Pass 1, pay period by pay period: how much of each election goes in before the limit stops it.
+  // Only the regular part of a paycheck (what fits under the elective limit) earns matching; catch-up does not.
   let contributedSoFar = 0;
+  let regularSoFar = 0;
   let tradIn = 0;
   let rothIn = 0;
   for (let period = 1; period <= PAY_PERIODS; period++) {
     const contributed = Math.min(perPeriod, Math.max(0, limit - contributedSoFar));
+    const regular = Math.min(contributed, Math.max(0, elective - regularSoFar));
     const cut = perPeriod - contributed;
     contributedSoFar += contributed;
+    regularSoFar += regular;
     tradIn += contributed * (1 - rothShare);
     rothIn += contributed * rothShare;
     out.notContributed += cut;
     if (cut > 0.005 && out.limitReachedPeriod == null) out.limitReachedPeriod = period;
+    if (perPeriod - regular > 0.005 && out.regularLimitPeriod == null) out.regularLimitPeriod = period;
 
     if (pay > 0) {
       out.agencyAutomatic += (pay * AGENCY_AUTOMATIC_PCT) / 100;
-      const actual = (pay * matchPct((contributed / pay) * 100)) / 100;
+      const actual = (pay * matchPct((regular / pay) * 100)) / 100;
       const elected = (pay * matchPct((perPeriod / pay) * 100)) / 100;
       out.agencyMatch += actual;
       out.matchLost += elected - actual;
