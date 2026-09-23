@@ -14,13 +14,18 @@
  *     Roth contributions count as the catch-up first, and Traditional is moved
  *     to Roth only for any shortfall
  *   - every elected dollar is either contributed or reported as over the limit
+ * and sanity-checks the projection simulation (src/lib/tspSimulation.ts) on
+ * the real monthly-returns data: repeatable, percentiles ordered, Traditional
+ * + Roth adding up, and G Fund outcomes far tighter than C Fund ones.
  */
 
+import { readFileSync } from "node:fs";
 import {
   CONTRIBUTION_LIMITS as L,
   contributionBreakdown,
   projectContributions,
 } from "../src/lib/tspProjection.ts";
+import { simulateProjection } from "../src/lib/tspSimulation.ts";
 
 const failures: string[] = [];
 let checks = 0;
@@ -116,10 +121,57 @@ const noSalary = contributionBreakdown({ salary: 0, mode: "dollars", traditional
 expect(noSalary.rothCatchUpUnknown, "no salary at 61 should flag rothCatchUpUnknown");
 expect(!noSalary.rothCatchUpRequired, "no salary should not claim the Roth rule applies");
 
+// --- Projection simulation (real TSP monthly returns) ---------------------
+const monthlyReturns = JSON.parse(
+  readFileSync(new URL("../public/tsp/monthly-returns.json", import.meta.url), "utf8"),
+);
+const simYears = projectContributions(
+  { salary: 100_000, mode: "percent", traditional: 10, roth: 5, age: 40 },
+  { traditional: 80_000, roth: 20_000 },
+  20,
+);
+const simArgs = {
+  monthlyReturns,
+  holdings: [
+    { id: "h1", fund: "C", amount: 80_000, roth: false },
+    { id: "h2", fund: "C", amount: 20_000, roth: true },
+  ],
+  allocation: [
+    { id: "a1", fund: "C", percent: 60 },
+    { id: "a2", fund: "G", percent: 40 },
+  ],
+  years: simYears,
+};
+const sim = simulateProjection(simArgs);
+expect(simulateProjection(simArgs).average.total === sim.average.total, "simulation should be repeatable");
+expect(sim.bands.length === 21 && sim.contributed.length === 21, "one band per year plus today");
+expect(near(sim.contributed[0], 100_000), "contributed starts at today's balance");
+expect(
+  near(sim.contributed[20], 100_000 + simYears.reduce((t, r) => t + r.total, 0)),
+  "contributed ends at balance plus all contributions",
+);
+for (const b of sim.bands) expect(b.p10 <= b.p25 && b.p25 <= b.p50 && b.p50 <= b.p75 && b.p75 <= b.p90, "percentiles ordered");
+for (const sc of [sim.below, sim.average, sim.above]) {
+  expect(near(sc.traditional + sc.roth, sc.total), "scenario Traditional + Roth = total");
+}
+expect(sim.below.total <= sim.average.total && sim.average.total <= sim.above.total, "scenarios ordered");
+// All-G money barely varies; all-C money varies a lot
+const spread = (fund: string) => {
+  const r = simulateProjection({
+    monthlyReturns,
+    holdings: [{ id: "h", fund, amount: 100_000, roth: false }],
+    allocation: [{ id: "a", fund, percent: 100 }],
+    years: projectContributions({ salary: 0, mode: "percent", traditional: 0, roth: 0, age: 40 }, { traditional: 100_000, roth: 0 }, 20),
+  });
+  return r.above.total / r.below.total;
+};
+expect(spread("G") < 1.1, `G Fund 20-year spread should be narrow, got ${spread("G").toFixed(2)}`);
+expect(spread("C") > 1.5, `C Fund 20-year spread should be wide, got ${spread("C").toFixed(2)}`);
+
 // --- Report -----------------------------------------------------------------
 if (failures.length) {
   console.error(`${failures.length} of ${checks} checks failed:`);
   for (const f of failures.slice(0, 30)) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log(`All ${checks} TSP contribution checks passed.`);
+console.log(`All ${checks} TSP contribution and projection checks passed.`);

@@ -83,7 +83,7 @@ npm install        # Install dependencies
 npm run dev        # Start dev server at localhost:4321
 npm run build      # Build for production
 npm run preview    # Preview production build locally
-npm run test:tsp   # Check the TSP contribution rules (limits, catch-up, Roth catch-up)
+npm run test:tsp   # Check the TSP contribution rules and projection simulation
 ```
 
 ## Writing Articles

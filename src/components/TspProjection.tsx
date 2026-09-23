@@ -12,6 +12,9 @@
  *     the limit and any agency match lost by hitting it early.
  *   - Contributions over the horizon: starting balances plus each year's
  *     contributions at that year's age, before any investment growth.
+ *   - Projected balance: a Monte Carlo run over real TSP monthly returns
+ *     (src/lib/tspSimulation.ts), shown as below average / average / above
+ *     average (25th / 50th / 75th percentile) outcomes and a fan chart.
  *   - Future allocation: how new contributions are split across funds, one
  *     row per fund, which must add up to 100%.
  *   - Projection horizon: a fixed list of year spans.
@@ -19,8 +22,10 @@
  * the inputs in the meantime.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
+import ProjectionChart from "./ProjectionChart";
+import { simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
 import {
   CONTRIBUTION_LIMITS,
   DEFAULT_FUND,
@@ -47,6 +52,13 @@ const fmtMoney = (n: number) =>
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(n);
+
+/** "2005-08" -> "Aug 2005" */
+const fmtMonth = (yyyyMm: string | null) => {
+  if (!yyyyMm) return "—";
+  const [y, m] = yyyyMm.split("-");
+  return `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(m) - 1]} ${y}`;
+};
 
 const fmtPct = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)}%`;
 
@@ -672,6 +684,91 @@ function ContributionsOverTime({
 }
 
 // ---------------------------------------------------------------------------
+// Projection: scenario tiles
+// ---------------------------------------------------------------------------
+
+function ScenarioTiles({
+  below,
+  average,
+  above,
+  contributed,
+}: {
+  below: Scenario;
+  average: Scenario;
+  above: Scenario;
+  contributed: number;
+}) {
+  const tiles: { label: string; hint: string; s: Scenario; main?: boolean }[] = [
+    { label: "Below average", hint: "1 in 4 outcomes were lower", s: below },
+    { label: "Average", hint: "Half of outcomes were lower", s: average, main: true },
+    { label: "Above average", hint: "1 in 4 outcomes were higher", s: above },
+  ];
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+        gap: "0.75rem",
+        marginBottom: "1.25rem",
+      }}
+    >
+      {tiles.map(({ label, hint, s, main }) => (
+        <div
+          key={label}
+          style={{
+            border: main ? "2px solid #2a78d6" : "1px solid #e2e8f0",
+            borderRadius: "0.6rem",
+            padding: "0.8rem 0.9rem",
+            background: main ? "#f5f9fe" : "#fff",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "#64748b",
+            }}
+          >
+            {label}
+          </div>
+          <div
+            style={{
+              fontSize: main ? "1.6rem" : "1.35rem",
+              fontWeight: 800,
+              color: "#0F2244",
+              fontVariantNumeric: "tabular-nums",
+              margin: "0.15rem 0",
+            }}
+          >
+            {fmtMoney(s.total)}
+          </div>
+          <div style={{ fontSize: "0.78rem", color: "#475569", lineHeight: 1.55, fontVariantNumeric: "tabular-nums" }}>
+            Traditional {fmtMoney(s.traditional)}
+            <br />
+            Roth {fmtMoney(s.roth)}
+            <br />
+            Growth {fmtMoney(s.total - contributed)}
+          </div>
+          <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.3rem" }}>{hint}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Adopts a new value only after it has been stable for delayMs, so the simulation doesn't rerun on every keystroke */
+function useDebounced<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handle = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(handle);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -738,6 +835,37 @@ function TspProjectionInner() {
   const overLimit = breakdown.notContributed > 0.5;
   const startBalances = { traditional: summary.traditional, roth: summary.roth };
   const yearRows = projectContributions(contributionInput, startBalances, horizon);
+
+  // --- projection ------------------------------------------------------------
+  const [monthlyReturns, setMonthlyReturns] = useState<MonthlyReturns | null>(null);
+  const [returnsError, setReturnsError] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/tsp/monthly-returns.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: MonthlyReturns) => {
+        if (!cancelled) setMonthlyReturns(data);
+      })
+      .catch(() => {
+        if (!cancelled) setReturnsError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // The simulation takes ~100ms at 40 years, so rerun it only once typing pauses.
+  const simKey = JSON.stringify({ holdings, allocation, yearRows });
+  const debouncedKey = useDebounced(simKey, 300);
+  const simPending = simKey !== debouncedKey;
+  const hasMoney = summary.total > 0 || yearRows.some((r) => r.total > 0);
+  const projection = useMemo(() => {
+    if (!monthlyReturns || !hasMoney) return null;
+    const { holdings: h, allocation: a, yearRows: y } = JSON.parse(debouncedKey);
+    return simulateProjection({ monthlyReturns, holdings: h, allocation: a, years: y });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthlyReturns, debouncedKey]);
+  const endYear = CONTRIBUTION_LIMITS.year + horizon;
   // Highest whole percent that stays within the limit all year, so the match isn't cut off early
   const spreadPct = salary > 0 ? Math.floor((myLimit / salary) * 100) : 0;
   const allocCheck = checkAllocation(allocation);
@@ -1144,17 +1272,103 @@ function TspProjectionInner() {
               marginTop: "1.25rem",
               padding: "0.9rem",
               borderRadius: "0.5rem",
-              background: "#f8fafc",
-              border: "1px dashed #cbd5e1",
-              color: "#64748b",
+              background: "#f5f9fe",
+              border: "1px solid #cfe0f5",
               fontSize: "0.85rem",
               lineHeight: 1.5,
+              color: "#1e293b",
             }}
           >
-            The projection (contributions, agency match and growth) is still being built. Results will appear here.
+            {projection ? (
+              <>
+                <div style={{ color: "#64748b" }}>Average projected balance by {endYear}</div>
+                <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0F2244", fontVariantNumeric: "tabular-nums" }}>
+                  {fmtMoney(projection.average.total)}
+                </div>
+                <div style={{ color: "#64748b", fontSize: "0.8rem" }}>
+                  Range {fmtMoney(projection.below.total)} to {fmtMoney(projection.above.total)}
+                </div>
+              </>
+            ) : (
+              <span style={{ color: "#64748b" }}>
+                Enter a balance or contributions to see your projected balance.
+              </span>
+            )}
           </div>
         </Card>
       </div>
+
+      {/* Projected balance */}
+      <Card style={{ marginTop: "1.5rem" }}>
+        <CardTitle hint="Your balances and contributions grown by replaying real TSP monthly returns 2,000 times.">
+          Projected balance by {endYear}
+        </CardTitle>
+        {returnsError ? (
+          <div style={{ fontSize: "0.85rem", color: "#dc2626" }}>
+            Couldn't load TSP historical returns. Try refreshing the page.
+          </div>
+        ) : !hasMoney ? (
+          <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+            Enter your balances or contributions to see a projection.
+          </div>
+        ) : !projection ? (
+          <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Running simulation…</div>
+        ) : (
+          <div style={{ opacity: simPending ? 0.6 : 1, transition: "opacity 150ms" }}>
+            {!allocCheck.isComplete && yearRows.some((r) => r.total > 0) && (
+              <div
+                style={{
+                  marginBottom: "0.9rem",
+                  padding: "0.6rem 0.8rem",
+                  borderRadius: "0.5rem",
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  color: "#92400e",
+                  fontSize: "0.82rem",
+                }}
+              >
+                Your future allocation adds up to {fmtPct(allocCheck.total)}, not 100%. The projection spreads new
+                contributions in the same proportions until you fix it.
+              </div>
+            )}
+            <ScenarioTiles
+              below={projection.below}
+              average={projection.average}
+              above={projection.above}
+              contributed={projection.contributed[projection.contributed.length - 1]}
+            />
+            <ProjectionChart result={projection} firstYear={CONTRIBUTION_LIMITS.year} startAge={age} />
+            <details style={{ marginTop: "0.6rem", fontSize: "0.8rem", color: "#475569", lineHeight: 1.6 }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>How the projection works</summary>
+              <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
+                <li>
+                  Each of {projection.trials.toLocaleString()} simulated futures is built month by month from randomly
+                  chosen real months of TSP history ({projection.poolSize} months,{" "}
+                  {fmtMonth(projection.poolStart)} to {fmtMonth(projection.poolEnd)}). Every fund gets that same month's actual return, so
+                  funds rise and fall together the way they really did.
+                </li>
+                <li>
+                  Only months where all of your funds existed are used; adding a newer fund (such as a recent L Fund)
+                  shortens the history the simulation draws from.
+                </li>
+                <li>
+                  <strong>Below average</strong>, <strong>average</strong> and <strong>above average</strong> are the
+                  25th, 50th and 75th percentiles: a quarter of outcomes ended below the first, half below the second,
+                  and a quarter above the third. The light band covers 8 in 10 outcomes.
+                </li>
+                <li>
+                  Today's balances stay in the funds they're in (no rebalancing). Each year's contributions, from the
+                  table below, go in monthly and are split by your future allocation.
+                </li>
+                <li>
+                  Figures are in future dollars, not adjusted for inflation, and assume no withdrawals. Past returns
+                  don't guarantee future results.
+                </li>
+              </ul>
+            </details>
+          </div>
+        )}
+      </Card>
 
       {/* Contributions over the horizon: summary always visible, year-by-year table collapsed */}
       <Card style={{ marginTop: "1.5rem" }}>
