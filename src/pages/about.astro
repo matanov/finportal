@@ -4,7 +4,7 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout
   title="About | FersMath"
-  description="Why I built FersMath — a free, accurate FERS retirement calculator for federal employees."
+  description="Why I built FersMath — free, accurate calculators for federal employees, from FERS pay and High-3 to TSP investing and projections."
 >
   <!-- Minimal nav -->
   <header style="border-bottom: 1px solid #e2e8f0; padding: 0 1.5rem;">
@@ -17,9 +17,9 @@ import Layout from "../layouts/Layout.astro";
         >← FersMath</a
       >
       <a
-        href="/calculator/high-3"
+        href="/calculators"
         style="font-size: 0.875rem; color: #2A7D9C; text-decoration: none; font-weight: 500;"
-        >High-3 Calculator</a
+        >Calculators</a
       >
     </div>
   </header>
@@ -60,14 +60,37 @@ import Layout from "../layouts/Layout.astro";
     </p>
 
     <p
+      style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;"
+    >
+      The other half of a federal retirement is the TSP, and most tools there
+      have a similar blind spot: they ask for one assumed rate of return and
+      hand back one confident-looking number. Real markets don't behave that
+      way, so the investment tools here start from what the funds actually did.
+    </p>
+
+    <p
+      style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;"
+    >
+      You can compare any TSP funds over any date range using TSP's published
+      share prices, refreshed daily. The Monte Carlo projection resamples real
+      historical months — each fund's history goes back to when it began, as
+      early as 1987 for the G Fund — and shows a range of outcomes instead of a
+      single line. The TSP Projection Calculator builds on that: enter your
+      balances, salary, and Traditional and Roth contributions, and it applies
+      the IRS contribution limits, the age-based catch-up rules, and the FERS
+      agency match year by year, then projects below-average, average, and
+      above-average outcomes, in today's dollars if you prefer.
+    </p>
+
+    <p
       style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 3rem;"
     >
-      Everything here is free. No account, no email, no ads. If it's useful,
+      Everything here is free. No account, no email, no ads. If it's useful,{" "}
       <a
         href="https://buymeacoffee.com/matanov"
         style="color: #2A7D9C; text-decoration: underline;"
         >buying me a coffee</a
-      >
+      >{" "}
       helps keep it running.
     </p>
 
@@ -126,6 +149,46 @@ import Layout from "../layouts/Layout.astro";
           >High-3 Average Salary Calculator</a
         > — OPM-compliant, uses real GS pay tables
       </li>
+      <li>
+        <a
+          href="/calculator/salary-lookup"
+          style="color: #2A7D9C; text-decoration: none;"
+          >GS Salary History Lookup</a
+        > — pay by grade, step, and locality back to 2011
+      </li>
+      <li>
+        <a
+          href="/calculator/fers-supplement"
+          style="color: #2A7D9C; text-decoration: none;"
+          >FERS Special Retirement Supplement Estimator</a
+        >
+      </li>
+      <li>
+        <a
+          href="/tsp/performance"
+          style="color: #2A7D9C; text-decoration: none;"
+          >TSP Fund Performance</a
+        > — compare funds over any date range
+      </li>
+      <li>
+        <a
+          href="/tsp/monte-carlo"
+          style="color: #2A7D9C; text-decoration: none;"
+          >TSP Monte Carlo Projection</a
+        > — a range of outcomes from real fund history
+      </li>
+      <li>
+        <a
+          href="/tsp/projection"
+          style="color: #2A7D9C; text-decoration: none;"
+          >TSP Projection Calculator</a
+        > — contributions, IRS limits, and FERS match, projected forward
+      </li>
+      <li>
+        <a href="/blog" style="color: #2A7D9C; text-decoration: none;"
+          >Articles</a
+        > — plain-English writing on federal pay and retirement
+      </li>
     </ul>
 
     <h2
@@ -137,8 +200,6 @@ import Layout from "../layouts/Layout.astro";
       style="margin: 0 0 3rem; padding: 0 0 0 1.25rem; color: #334155; line-height: 2;"
     >
       <li>FERS Basic Annuity Calculator</li>
-      <li>TSP Projection Calculator</li>
-      <li>FERS Supplement Estimator</li>
       <li>Retirement Eligibility Checker (MRA, MRA+10, MRA+30)</li>
     </ul>
 
@@ -158,6 +219,15 @@ import Layout from "../layouts/Layout.astro";
       That said, I'm not a financial advisor or an HR specialist. Use this to
       understand your situation — then verify the final numbers with your agency
       HR office before making any retirement decisions.
+    </p>
+    <p
+      style="font-size: 1.05rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.5rem;"
+    >
+      The TSP projections are a different kind of tool. They show a range of
+      outcomes built from historical returns — not a forecast of what your
+      account will do. Past performance doesn't guarantee future results, so
+      treat them as a way to see how wide the range of possibilities is, not as
+      a prediction.
     </p>
   </main>
 </Layout>
