@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import WageBaseComparison from '../../components/WageBaseComparison';
+import CareerWageChart from '../../components/CareerWageChart';
 ---
 
 <Layout
@@ -143,6 +144,26 @@ import WageBaseComparison from '../../components/WageBaseComparison';
               <a href="#fnref-2" style="color: #2A7D9C; text-decoration: none;">↩</a>
             </li>
           </ol>
+
+          <!-- Section break -->
+          <hr
+            aria-hidden="true"
+            style="width: 4rem; margin: 3rem auto; border: 0; border-top: 3px solid #C9A035; border-radius: 2px;"
+          />
+
+          <p>
+            So what is the wage story of a typical GS-9 employee starting in 2011 and moving up to GS-14 in
+            2026? The chart below runs the numbers for someone in Kansas and someone in DC with a typical
+            career progression of roughly three years in grade.
+          </p>
+
+          <!-- Typical career vs. wage base chart -->
+          <div
+            style="margin: 2rem 0; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem;
+                   background: #fff;"
+          >
+            <CareerWageChart client:load />
+          </div>
 
           <!-- Calculator placeholder -->
           <div
