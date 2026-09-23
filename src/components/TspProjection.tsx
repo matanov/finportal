@@ -734,43 +734,53 @@ function TspProjectionInner() {
                 lineHeight: 1.6,
               }}
             >
-              <div style={{ fontWeight: 700, color: "#1e293b", marginBottom: "0.25rem" }}>
-                {CONTRIBUTION_LIMITS.year} contribution limits
+              {/* Always visible: the one number that matters to this person */}
+              <div style={{ color: "#1e293b" }}>
+                {age != null ? (
+                  <>
+                    At {age}, your {CONTRIBUTION_LIMITS.year} limit is <strong>{fmtMoney(myLimit)}</strong>
+                    {catchUp > 0
+                      ? ` (${fmtMoney(CONTRIBUTION_LIMITS.elective)} + ${fmtMoney(catchUp)} catch-up).`
+                      : "."}
+                  </>
+                ) : (
+                  <>
+                    Your {CONTRIBUTION_LIMITS.year} limit is <strong>{fmtMoney(CONTRIBUTION_LIMITS.elective)}</strong>.
+                    Enter your age to see if catch-up applies.
+                  </>
+                )}
               </div>
-              <ul style={{ margin: 0, paddingLeft: "1.1rem", listStyle: "disc" }}>
-                <li>
-                  <strong>{fmtMoney(CONTRIBUTION_LIMITS.elective)}</strong> a year of your own contributions,
-                  Traditional and Roth combined. Agency contributions don't count toward it.
-                </li>
-                <li>
-                  Age 50 or older: up to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp50)}</strong> more in catch-up
-                  contributions.
-                </li>
-                <li>
-                  Ages 60 to 63: the catch-up rises to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp60to63)}</strong>.
-                </li>
-                <li>
-                  If you earned more than {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} in the previous
-                  year, catch-up contributions must go in as Roth. This calculator uses your current salary for that
-                  test, since it doesn't ask for last year's wages.
-                </li>
-              </ul>
-              {age != null && (
-                <div style={{ marginTop: "0.5rem", color: "#1e293b" }}>
-                  At {age}, your limit is <strong>{fmtMoney(myLimit)}</strong>
-                  {catchUp > 0
-                    ? ` (${fmtMoney(CONTRIBUTION_LIMITS.elective)} + ${fmtMoney(catchUp)} catch-up).`
-                    : "."}
-                </div>
-              )}
-              <a
-                href={CONTRIBUTION_LIMITS.source}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: "inline-block", marginTop: "0.35rem", color: "#2A7D9C" }}
-              >
-                Source: TSP contribution limits
-              </a>
+              <details style={{ marginTop: "0.4rem" }}>
+                <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>
+                  {CONTRIBUTION_LIMITS.year} contribution limits
+                </summary>
+                <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
+                  <li>
+                    <strong>{fmtMoney(CONTRIBUTION_LIMITS.elective)}</strong> a year of your own contributions,
+                    Traditional and Roth combined. Agency contributions don't count toward it.
+                  </li>
+                  <li>
+                    Age 50 or older: up to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp50)}</strong> more in catch-up
+                    contributions.
+                  </li>
+                  <li>
+                    Ages 60 to 63: the catch-up rises to <strong>{fmtMoney(CONTRIBUTION_LIMITS.catchUp60to63)}</strong>.
+                  </li>
+                  <li>
+                    If you earned more than {fmtMoney(CONTRIBUTION_LIMITS.rothCatchUpWageThreshold)} in the previous
+                    year, catch-up contributions must go in as Roth. This calculator uses your current salary for that
+                    test, since it doesn't ask for last year's wages.
+                  </li>
+                </ul>
+                <a
+                  href={CONTRIBUTION_LIMITS.source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", marginTop: "0.35rem", color: "#2A7D9C" }}
+                >
+                  Source: TSP contribution limits
+                </a>
+              </details>
             </div>
           </Card>
 
