@@ -16,6 +16,12 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
     <meta property="og:description" content={article.description} />
     <meta property="og:url" content={canonical} />
     <meta property="article:published_time" content={article.published} />
+    <noscript>
+      <style is:inline>
+        #wage-base-table.wb-collapsed .wb-older { display: revert !important; }
+        .wb-toggle { display: none; }
+      </style>
+    </noscript>
   </Fragment>
 
   <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
@@ -105,24 +111,25 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
             salaries against.
           </p>
 
-          <!-- Wage base table -->
-          <figure style="margin: 2rem 0;">
+          <!-- Wage base table: last six years by default; the button reveals 2011–2020 and the footnotes -->
+          <div id="wage-base-table" class="wb-collapsed">
+          <figure style="margin: 2rem 0 1rem;">
             <div style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums;">
                 <thead>
                   <tr><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: left; color: #0F2244; font-weight: 600;">Year</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Wage base</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Change ($)</th><th style="padding: 0.5rem 0.75rem; border-bottom: 2px solid #cbd5e1; text-align: right; color: #0F2244; font-weight: 600;">Change (%)</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2011</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$106,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2012</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$110,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.09%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2013</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$113,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,600</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.27%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2014</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$117,000</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+2.90%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2015</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+1.28%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2016</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$0</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">0.00%<sup><a href="#fn-1" id="fnref-1" style="color: #2A7D9C; text-decoration: none;">[1]</a></sup></td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2017</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$127,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$8,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+7.34%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2018</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$128,400</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+0.94%<sup><a href="#fn-2" id="fnref-2" style="color: #2A7D9C; text-decoration: none;">[2]</a></sup></td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2019</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$132,900</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.50%</td></tr>
-                  <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2020</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$137,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.61%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2011</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$106,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">—</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2012</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$110,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.09%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2013</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$113,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,600</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.27%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2014</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$117,000</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$3,300</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+2.90%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2015</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+1.28%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2016</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$118,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$0</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">0.00%<sup><a href="#fn-1" id="fnref-1" style="color: #2A7D9C; text-decoration: none;">[1]</a></sup></td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2017</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$127,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$8,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+7.34%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2018</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$128,400</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$1,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+0.94%<sup><a href="#fn-2" id="fnref-2" style="color: #2A7D9C; text-decoration: none;">[2]</a></sup></td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2019</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$132,900</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,500</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.50%</td></tr>
+                  <tr class="wb-older"><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2020</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$137,700</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.61%</td></tr>
                   <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2021</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$142,800</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$5,100</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+3.70%</td></tr>
                   <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2022</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$147,000</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$4,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+2.94%</td></tr>
                   <tr><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: left;">2023</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$160,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+$13,200</td><td style="padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">+8.98%</td></tr>
@@ -132,14 +139,24 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
                 </tbody>
               </table>
             </div>
+            <button
+              type="button"
+              class="wb-toggle"
+              aria-controls="wage-base-table"
+              aria-expanded="false"
+              style="margin-top: 0.75rem; background: none; border: none; padding: 0; cursor: pointer;
+                     font-size: 0.85rem; font-weight: 600; color: #2A7D9C;"
+            >
+              ▸ Show all years (2011–2026)
+            </button>
             <figcaption style="margin-top: 0.75rem; font-size: 0.85rem; font-style: italic; color: #64748b;">
-              Social Security wage base and annual change, 2011–2026. Source: SSA, Contribution and Benefit
-              Base. Average annual increase over the period: 3.71%.
+              Social Security wage base and annual change. Source: SSA, Contribution and Benefit Base.
+              Average annual increase, 2011–2026: 3.71%.
             </figcaption>
           </figure>
 
           <!-- Footnotes -->
-          <ol style="list-style: decimal; margin: 0 0 2rem; padding-left: 1.25rem; font-size: 0.85rem; color: #64748b; line-height: 1.6;">
+          <ol class="wb-older" style="list-style: decimal; margin: 0 0 2rem; padding-left: 1.25rem; font-size: 0.85rem; color: #64748b; line-height: 1.6;">
             <li id="fn-1">
               No cost-of-living adjustment was payable for 2016, so the base could not rise. The same rule
               held it flat for 2010 and 2011.
@@ -150,6 +167,7 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
               <a href="#fnref-2" style="color: #2A7D9C; text-decoration: none;">↩</a>
             </li>
           </ol>
+          </div>
 
           <!-- Section break -->
           <hr
@@ -175,10 +193,29 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
 
     </div>
   </main>
+
+  <script>
+    const wrapper = document.getElementById('wage-base-table');
+    const toggle = wrapper?.querySelector<HTMLButtonElement>('.wb-toggle');
+    if (wrapper && toggle) {
+      toggle.addEventListener('click', () => {
+        const expanded = wrapper.classList.toggle('wb-collapsed') === false;
+        toggle.setAttribute('aria-expanded', String(expanded));
+        toggle.textContent = expanded ? '▾ Show last six years only' : '▸ Show all years (2011–2026)';
+      });
+    }
+  </script>
 </Layout>
 
 <style>
   .article-body p {
     margin: 0 0 1.25rem;
+  }
+</style>
+
+<style is:global>
+  /* Wage base table starts at the last six years; older rows and their footnotes are revealed on click. */
+  .wb-collapsed .wb-older {
+    display: none;
   }
 </style>
