@@ -13,11 +13,17 @@ export type Article = CollectionEntry<'articles'>;
 /**
  * Articles to show, newest first. Drafts are included while running
  * `astro dev` so they can be previewed, and left out of production builds.
+ *
+ * Unlisted articles (`unlisted: true`) are left out by default, which keeps
+ * them off every list. Only the page generator asks for them with
+ * `includeUnlisted`, so they still get a page at their direct URL.
  */
-export async function getArticles(): Promise<Article[]> {
+export async function getArticles({
+  includeUnlisted = false,
+}: { includeUnlisted?: boolean } = {}): Promise<Article[]> {
   const entries = await getCollection(
     'articles',
-    ({ data }) => import.meta.env.DEV || !data.draft,
+    ({ data }) => (import.meta.env.DEV || !data.draft) && (includeUnlisted || !data.unlisted),
   );
   return entries.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
 }

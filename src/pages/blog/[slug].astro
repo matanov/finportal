@@ -9,7 +9,7 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { getArticles, type Article } from '../../lib/articles';
 
 export async function getStaticPaths() {
-  const articles = await getArticles();
+  const articles = await getArticles({ includeUnlisted: true });
   return articles.map((article) => ({ params: { slug: article.id }, props: { article } }));
 }
 

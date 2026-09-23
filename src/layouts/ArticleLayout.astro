@@ -15,8 +15,14 @@ interface Props {
 }
 
 const { article } = Astro.props;
-const { title, description, category, published, draft } = article.data;
+const { title, description, category, published, draft, unlisted } = article.data;
 const canonical = new URL(articleUrl(article), Astro.site).href;
+// Drafts and unlisted previews are both kept out of search and labelled on the page
+const badge = draft
+  ? 'Draft — visible in dev only'
+  : unlisted
+    ? 'Unlisted — not linked from the site'
+    : null;
 ---
 
 <Layout title={`${title} | FersMath`} description={description}>
@@ -27,7 +33,7 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="article:published_time" content={isoDate(published)} />
-    {draft && <meta name="robots" content="noindex, nofollow" />}
+    {badge && <meta name="robots" content="noindex, nofollow" />}
   </Fragment>
 
   <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
@@ -42,13 +48,13 @@ const canonical = new URL(articleUrl(article), Astro.site).href;
         <span>{title}</span>
       </nav>
 
-      {draft && (
+      {badge && (
         <div
           style="display: inline-block; background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
                  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
                  padding: 0.3rem 0.75rem; border-radius: 999px; margin-bottom: 1.25rem;"
         >
-          Draft — visible in dev only
+          {badge}
         </div>
       )}
 

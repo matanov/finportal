@@ -21,6 +21,10 @@
  *      not deployed, listed or indexed. Delete the line (or set it to
  *      false) to publish; the article then appears on the homepage, in
  *      /blog, and in the sitemap automatically.
+ *      To preview a draft on the live site without publishing it, use
+ *      `unlisted: true` instead of `draft: true`. It is deployed at its
+ *      direct URL, but kept off the homepage and /blog, out of the sitemap,
+ *      and marked noindex. Anyone with the link can still open it.
  *
  * Page chrome (breadcrumb, byline, typography, meta tags) comes from
  * src/layouts/ArticleLayout.astro, so every article looks the same without
@@ -44,6 +48,8 @@ const articles = defineCollection({
     /** Optional override; otherwise estimated from the word count */
     readMinutes: z.number().int().positive().optional(),
     draft: z.boolean().default(false),
+    /** Live at its URL, but hidden: not on the homepage or /blog, not in the sitemap, marked noindex */
+    unlisted: z.boolean().default(false),
   }),
 });
 
