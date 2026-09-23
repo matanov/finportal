@@ -1,0 +1,43 @@
+---
+# Starting point for a new article. Copy this file to a new name in this
+# folder (the name becomes the URL: my-topic.mdx → /blog/my-topic/), then
+# fill in the fields below. Files starting with "_" are never published.
+title: Your Article Title
+description: One or two sentences for the article card and search results (max 200 characters).
+category: Retirement
+published: 2026-01-01
+# readMinutes: 6   # optional; estimated from the word count if left out
+draft: true        # delete this line to publish
+---
+
+{/* Components go up here. Remove any you don't use. */}
+import ChartBox from '../../components/ChartBox.astro';
+import CollapsibleTable from '../../components/CollapsibleTable.astro';
+
+Write in plain Markdown. A blank line starts a new paragraph.
+
+## A section heading
+
+- Bullet points
+- **Bold**, *italic*, and [links](/calculator/fers-supplement)
+
+A footnote marker looks like this.[^example]
+
+---
+
+Three dashes on their own line draw the short gold section break above.
+
+| Year | Amount |
+|---|--:|
+| 2025 | $1,000 |
+| 2026 | $1,050 |
+
+Interactive charts are React components. Import them above, then place one like this:
+
+{/*
+<ChartBox>
+  <WageBaseComparison client:load />
+</ChartBox>
+*/}
+
+[^example]: Footnotes are collected at the bottom of the article.

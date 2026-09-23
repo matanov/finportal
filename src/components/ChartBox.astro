@@ -1,0 +1,18 @@
+---
+/**
+ * ChartBox.astro
+ *
+ * White bordered frame for an interactive chart inside an article:
+ *
+ *   <ChartBox>
+ *     <WageBaseComparison client:load />
+ *   </ChartBox>
+ */
+---
+
+<div
+  style="margin: 2rem 0; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem;
+         background: #fff;"
+>
+  <slot />
+</div>

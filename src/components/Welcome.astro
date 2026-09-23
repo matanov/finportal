@@ -1,9 +1,9 @@
 ---
 // Welcome.astro — Branded homepage for FERSmath
 import CalculatorGrid from './CalculatorGrid.astro';
-import { ARTICLES, articleUrl, formatPublished } from '../data/articles';
+import { articleUrl, formatPublished, getArticles, readMinutes } from '../lib/articles';
 
-const latestArticles = ARTICLES.slice(0, 3);
+const latestArticles = (await getArticles()).slice(0, 3);
 ---
 
 <!-- ─── Nav ─────────────────────────────────────────────────────────────── -->
@@ -155,22 +155,22 @@ const latestArticles = ARTICLES.slice(0, 3);
         >
           <span
             style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-gold-400);"
-            >{article.category}</span
+            >{article.data.category}</span
           >
           <h3
             style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 600; color: white; margin: 0.5rem 0 0.75rem; line-height: 1.35;"
           >
-            {article.title}
+            {article.data.title}
           </h3>
           <p
             style="font-size: 0.875rem; color: var(--color-primary-100); line-height: 1.6; margin: 0 0 1.25rem;"
           >
-            {article.description}
+            {article.data.description}
           </p>
           <div
             style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--color-primary-200);"
           >
-            <span>{formatPublished(article.published)}</span><span>{article.readMinutes} min read</span>
+            <span>{formatPublished(article.data.published)}</span><span>{readMinutes(article)} min read</span>
           </div>
         </a>
       ))}

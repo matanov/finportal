@@ -1,0 +1,122 @@
+---
+/**
+ * CollapsibleTable.astro
+ *
+ * Wraps a Markdown table in an article so only its last few rows show at
+ * first, with a button that reveals the rest in place (rows stay in their
+ * original order). Optional notes, e.g. footnotes for the hidden rows, are
+ * revealed together with them.
+ *
+ *   <CollapsibleTable showLast={6} caption="Source: …">
+ *
+ *   | Year | Value |
+ *   |---|--:|
+ *   | 2011 | … |
+ *   | 2026 | … |
+ *
+ *   <Fragment slot="notes">
+ *
+ *   1. A note about one of the older rows.
+ *
+ *   </Fragment>
+ *   </CollapsibleTable>
+ *
+ * The blank lines around the table and the notes matter: without them MDX
+ * treats the Markdown as plain text.
+ *
+ * Rows are tagged when the site is built, and a tiny inline script collapses
+ * the table before it paints, so there is no flash of the full table. With
+ * JavaScript off the whole table shows and the button stays hidden.
+ */
+
+interface Props {
+  /** How many of the newest (bottom) rows stay visible when collapsed */
+  showLast?: number;
+  caption?: string;
+}
+
+const { showLast = 6, caption } = Astro.props;
+
+const tableHtml = await Astro.slots.render('default');
+const notesHtml = Astro.slots.has('notes') ? await Astro.slots.render('notes') : '';
+
+// Tag every body row except the last `showLast` as collapsible.
+const bodyMatch = tableHtml.match(/<tbody>([\s\S]*?)<\/tbody>/);
+const rows = bodyMatch ? [...bodyMatch[1].matchAll(/<tr[\s\S]*?<\/tr>/g)].map((m) => m[0]) : [];
+const hiddenCount = Math.max(0, rows.length - showLast);
+
+let html = tableHtml;
+if (bodyMatch && hiddenCount > 0) {
+  const tagged = rows.map((row, i) =>
+    i < hiddenCount ? row.replace(/^<tr/, '<tr class="ct-older"') : row,
+  );
+  html = tableHtml.replace(bodyMatch[1], tagged.join('\n'));
+}
+
+// "2011–2026" style range for the button, from the first column of the first and last rows.
+const firstCell = (row?: string) =>
+  row?.match(/<td[^>]*>([\s\S]*?)<\/td>/)?.[1].replace(/<[^>]+>/g, '').trim() ?? '';
+const range = rows.length ? `${firstCell(rows[0])}–${firstCell(rows[rows.length - 1])}` : '';
+const expandLabel = `▸ Show all years (${range})`;
+const collapseLabel = `▾ Show last ${showLast === 6 ? 'six' : showLast} years only`;
+---
+
+<div class="ct">
+  <figure style="margin: 2rem 0 1rem;">
+    <div style="overflow-x: auto;" set:html={html} />
+    {hiddenCount > 0 && (
+      <button
+        type="button"
+        class="ct-toggle"
+        hidden
+        aria-expanded="false"
+        data-expand={expandLabel}
+        data-collapse={collapseLabel}
+        style="margin-top: 0.75rem; background: none; border: none; padding: 0; cursor: pointer;
+               font-size: 0.85rem; font-weight: 600; color: #2A7D9C;"
+      >
+        {expandLabel}
+      </button>
+    )}
+    {caption && (
+      <figcaption style="margin-top: 0.75rem; font-size: 0.85rem; font-style: italic; color: #64748b;">
+        {caption}
+      </figcaption>
+    )}
+  </figure>
+  {notesHtml && <div class={`ct-notes${hiddenCount > 0 ? ' ct-older' : ''}`} set:html={notesHtml} />}
+</div>
+{hiddenCount > 0 && (
+  <script is:inline>
+    (function (el) {
+      el.classList.add('ct-collapsed');
+      el.querySelector('.ct-toggle').hidden = false;
+    })(document.currentScript.previousElementSibling);
+  </script>
+)}
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.ct-toggle').forEach((toggle) => {
+    const wrapper = toggle.closest('.ct');
+    if (!wrapper) return;
+    toggle.addEventListener('click', () => {
+      const expanded = !wrapper.classList.toggle('ct-collapsed');
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.textContent = (expanded ? toggle.dataset.collapse : toggle.dataset.expand) ?? '';
+    });
+  });
+</script>
+
+<style is:global>
+  .ct-collapsed .ct-older {
+    display: none;
+  }
+  .ct-notes ol {
+    list-style: decimal;
+    margin: 0 0 2rem;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.6;
+  }
+</style>
