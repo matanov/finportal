@@ -297,6 +297,8 @@ export interface ContributionYear {
   /** Age during this year, or null if no age was entered */
   age: number | null;
   catchUpEligible: boolean;
+  /** At or past the retirement age: no contributions this year */
+  retired: boolean;
   /** Employee money that lands in the Traditional balance (regular + catch-up) */
   employeeTraditional: number;
   /** Employee money that lands in the Roth balance (regular + catch-up) */
@@ -314,18 +316,39 @@ export interface ContributionYear {
  * growth. Each year re-runs contributionBreakdown() at that year's age, so
  * catch-up starts at 50 and steps up at 60–63 on its own. Salary and the
  * IRS limits are held at today's values for now.
+ *
+ * With a retirement age, contributions (employee and agency) stop from the
+ * year the person reaches it; the rows continue with zeros so the balance
+ * can keep growing to the end of the horizon.
  */
 export function projectContributions(
   input: ContributionInput,
   start: { traditional: number; roth: number },
   years: number,
   firstYear: number = CONTRIBUTION_LIMITS.year,
+  retireAge: number | null = null,
 ): ContributionYear[] {
   const rows: ContributionYear[] = [];
   let cumTrad = start.traditional;
   let cumRoth = start.roth;
   for (let i = 0; i < years; i++) {
     const age = input.age == null ? null : input.age + i;
+    const retired = age != null && retireAge != null && age >= retireAge;
+    if (retired) {
+      rows.push({
+        year: firstYear + i,
+        age,
+        catchUpEligible: false,
+        retired,
+        employeeTraditional: 0,
+        employeeRoth: 0,
+        agency: 0,
+        total: 0,
+        cumulativeTraditional: cumTrad,
+        cumulativeRoth: cumRoth,
+      });
+      continue;
+    }
     const b = contributionBreakdown({ ...input, age });
     const employeeTraditional = b.regularTraditional + b.catchUpTraditional;
     const employeeRoth = b.regularRoth + b.catchUpRoth;
@@ -335,6 +358,7 @@ export function projectContributions(
       year: firstYear + i,
       age,
       catchUpEligible: b.catchUpLimit > 0,
+      retired,
       employeeTraditional,
       employeeRoth,
       agency: b.agencyTotal,

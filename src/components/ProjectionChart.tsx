@@ -55,11 +55,14 @@ export default function ProjectionChart({
   result,
   firstYear,
   startAge,
+  retireIndex = null,
 }: {
   result: SimulationResult;
   /** Calendar year of index 0 (today); index i is January of firstYear + i */
   firstYear: number;
   startAge: number | null;
+  /** Year index at which contributions stop, drawn as a marker */
+  retireIndex?: number | null;
 }) {
   const [containerRef, containerWidth] = useWidth<HTMLDivElement>(760);
   const [hover, setHover] = useState<number | null>(null);
@@ -187,6 +190,23 @@ export default function ProjectionChart({
               {firstYear + i}
             </text>
           ))}
+
+          {retireIndex != null && retireIndex > 0 && retireIndex <= n && (
+            <g aria-hidden="true">
+              <line
+                x1={x(retireIndex)}
+                x2={x(retireIndex)}
+                y1={pad.top + 12}
+                y2={pad.top + plotH}
+                stroke={MUTED}
+                strokeWidth={1}
+                strokeDasharray="2 3"
+              />
+              <text x={x(retireIndex)} y={pad.top + 6} textAnchor="middle" fontSize="11" fill={MUTED}>
+                Retire{startAge != null ? ` at ${startAge + retireIndex}` : ""}
+              </text>
+            </g>
+          )}
 
           <path d={area(p90, p10)} fill={BAND} fillOpacity={0.12} />
           <path d={area(p75, p25)} fill={BAND} fillOpacity={0.22} />

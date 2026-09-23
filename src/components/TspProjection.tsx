@@ -25,7 +25,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./ErrorBoundary";
 import ProjectionChart from "./ProjectionChart";
-import { simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
+import { inTodaysDollars, simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
 import {
   CONTRIBUTION_LIMITS,
   DEFAULT_FUND,
@@ -247,6 +247,83 @@ function DollarInput({
       onChange={(e) => onChange(e.target.value === "" ? 0 : Math.max(0, Number(e.target.value)))}
       style={inputStyle}
     />
+  );
+}
+
+/** Percent input that allows one decimal place, e.g. 2.5 */
+function DecimalPercentInput({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        max={20}
+        step={0.1}
+        value={value}
+        onChange={(e) => onChange(e.target.value === "" ? 0 : Math.min(20, Math.max(0, Number(e.target.value))))}
+        style={{ ...inputStyle, paddingRight: "1.6rem" }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: "0.6rem",
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "#94a3b8",
+          fontSize: "0.85rem",
+        }}
+      >
+        %
+      </span>
+    </div>
+  );
+}
+
+function DollarsToggle({ todays, onChange }: { todays: boolean; onChange: (t: boolean) => void }) {
+  const options: { value: boolean; label: string }[] = [
+    { value: false, label: "Future dollars" },
+    { value: true, label: "Today's dollars" },
+  ];
+  return (
+    <div
+      role="group"
+      aria-label="Show amounts in"
+      style={{ display: "inline-flex", border: "1px solid #e2e8f0", borderRadius: "0.375rem", overflow: "hidden" }}
+    >
+      {options.map((o) => {
+        const active = o.value === todays;
+        return (
+          <button
+            key={o.label}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(o.value)}
+            style={{
+              padding: "0.35rem 0.75rem",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              background: active ? "#0F2244" : "#fff",
+              color: active ? "#fff" : "#64748b",
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -618,8 +695,10 @@ function ContributionsOverTime({
               <td style={{ ...td, textAlign: "left" }}>{r.year}</td>
               <td style={{ ...td, textAlign: "left" }}>
                 {r.age ?? "—"}
-                {r.catchUpEligible && (
-                  <span style={{ ...sub, color: "#047857" }}>catch-up</span>
+                {r.retired ? (
+                  <span style={sub}>retired</span>
+                ) : (
+                  r.catchUpEligible && <span style={{ ...sub, color: "#047857" }}>catch-up</span>
                 )}
               </td>
               <td className="ot-col" style={td}>
@@ -795,7 +874,12 @@ function TspProjectionInner() {
     { id: "a-0", fund: DEFAULT_FUND, percent: 100 },
   ]);
   const [horizon, setHorizon] = useState(DEFAULT_HORIZON);
+  const [retireAge, setRetireAge] = useState<number | null>(null);
+  // Show results in today's dollars, deflated by this annual inflation rate.
+  const [todaysDollars, setTodaysDollars] = useState(false);
+  const [inflationPct, setInflationPct] = useState(2.5);
   const [yearsOpen, setYearsOpen] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [age, setAge] = useState<number | null>(null);
   const [salary, setSalary] = useState(0);
   // Most FERS employees contribute 5%, the level that earns the full agency match.
@@ -834,7 +918,15 @@ function TspProjectionInner() {
   const breakdown = contributionBreakdown(contributionInput);
   const overLimit = breakdown.notContributed > 0.5;
   const startBalances = { traditional: summary.traditional, roth: summary.roth };
-  const yearRows = projectContributions(contributionInput, startBalances, horizon);
+  const yearRows = projectContributions(
+    contributionInput,
+    startBalances,
+    horizon,
+    CONTRIBUTION_LIMITS.year,
+    age == null ? null : retireAge,
+  );
+  // Index into the yearly results where contributions stop, if it falls inside the horizon
+  const retireIndex = yearRows.findIndex((r) => r.retired);
 
   // --- projection ------------------------------------------------------------
   const [monthlyReturns, setMonthlyReturns] = useState<MonthlyReturns | null>(null);
@@ -866,6 +958,7 @@ function TspProjectionInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthlyReturns, debouncedKey]);
   const endYear = CONTRIBUTION_LIMITS.year + horizon;
+  const shown = projection && todaysDollars ? inTodaysDollars(projection, inflationPct) : projection;
   // Highest whole percent that stays within the limit all year, so the match isn't cut off early
   const spreadPct = salary > 0 ? Math.floor((myLimit / salary) * 100) : 0;
   const allocCheck = checkAllocation(allocation);
@@ -1237,6 +1330,35 @@ function TspProjectionInner() {
                 </option>
               ))}
             </select>
+            <label htmlFor="retire-age" style={{ ...labelStyle, fontSize: "0.75rem", marginTop: "1rem" }}>
+              Retire at age (optional)
+            </label>
+            <input
+              id="retire-age"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={100}
+              step={1}
+              placeholder="—"
+              disabled={age == null}
+              value={retireAge ?? ""}
+              onChange={(e) =>
+                setRetireAge(e.target.value === "" ? null : Math.min(100, Math.max(1, Math.round(Number(e.target.value)))))
+              }
+              style={{ ...inputStyle, maxWidth: "120px", opacity: age == null ? 0.5 : 1 }}
+            />
+            <div style={{ marginTop: "0.4rem", fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+              {age == null
+                ? "Enter your current age to use this."
+                : retireAge == null
+                  ? "Leave blank to keep contributing for the whole horizon."
+                  : retireAge <= age
+                    ? "That's at or below your current age, so no new contributions are projected."
+                    : retireIndex === -1
+                      ? `Retirement at ${retireAge} is beyond the ${horizon}-year horizon, so contributions run the whole time.`
+                      : `Contributions stop in ${CONTRIBUTION_LIMITS.year + retireIndex}, the year you turn ${retireAge}; your balance keeps growing after that.`}
+            </div>
           </Card>
         </div>
 
@@ -1279,14 +1401,17 @@ function TspProjectionInner() {
               color: "#1e293b",
             }}
           >
-            {projection ? (
+            {shown ? (
               <>
-                <div style={{ color: "#64748b" }}>Average projected balance by {endYear}</div>
+                <div style={{ color: "#64748b" }}>
+                  Average projected balance by {endYear}
+                  {todaysDollars && " in today's dollars"}
+                </div>
                 <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0F2244", fontVariantNumeric: "tabular-nums" }}>
-                  {fmtMoney(projection.average.total)}
+                  {fmtMoney(shown.average.total)}
                 </div>
                 <div style={{ color: "#64748b", fontSize: "0.8rem" }}>
-                  Range {fmtMoney(projection.below.total)} to {fmtMoney(projection.above.total)}
+                  Range {fmtMoney(shown.below.total)} to {fmtMoney(shown.above.total)}
                 </div>
               </>
             ) : (
@@ -1300,9 +1425,38 @@ function TspProjectionInner() {
 
       {/* Projected balance */}
       <Card style={{ marginTop: "1.5rem" }}>
-        <CardTitle hint="Your balances and contributions grown by replaying real TSP monthly returns 2,000 times.">
-          Projected balance by {endYear}
-        </CardTitle>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "0.75rem",
+          }}
+        >
+          <CardTitle
+            hint={`Your balances and contributions grown by replaying real TSP monthly returns 2,000 times${
+              todaysDollars ? `, shown in today's dollars at ${inflationPct}% inflation a year` : ""
+            }.`}
+          >
+            Projected balance by {endYear}
+          </CardTitle>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
+            <DollarsToggle todays={todaysDollars} onChange={setTodaysDollars} />
+            {todaysDollars && (
+              <label
+                htmlFor="inflation"
+                style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "#64748b" }}
+              >
+                Inflation
+                <div style={{ width: "86px" }}>
+                  <DecimalPercentInput id="inflation" value={inflationPct} onChange={setInflationPct} />
+                </div>
+                a year
+              </label>
+            )}
+          </div>
+        </div>
         {returnsError ? (
           <div style={{ fontSize: "0.85rem", color: "#dc2626" }}>
             Couldn't load TSP historical returns. Try refreshing the page.
@@ -1311,7 +1465,7 @@ function TspProjectionInner() {
           <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
             Enter your balances or contributions to see a projection.
           </div>
-        ) : !projection ? (
+        ) : !shown ? (
           <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Running simulation…</div>
         ) : (
           <div style={{ opacity: simPending ? 0.6 : 1, transition: "opacity 150ms" }}>
@@ -1332,19 +1486,24 @@ function TspProjectionInner() {
               </div>
             )}
             <ScenarioTiles
-              below={projection.below}
-              average={projection.average}
-              above={projection.above}
-              contributed={projection.contributed[projection.contributed.length - 1]}
+              below={shown.below}
+              average={shown.average}
+              above={shown.above}
+              contributed={shown.contributed[shown.contributed.length - 1]}
             />
-            <ProjectionChart result={projection} firstYear={CONTRIBUTION_LIMITS.year} startAge={age} />
+            <ProjectionChart
+              result={shown}
+              firstYear={CONTRIBUTION_LIMITS.year}
+              startAge={age}
+              retireIndex={retireIndex > 0 ? retireIndex : null}
+            />
             <details style={{ marginTop: "0.6rem", fontSize: "0.8rem", color: "#475569", lineHeight: 1.6 }}>
               <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>How the projection works</summary>
               <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
                 <li>
-                  Each of {projection.trials.toLocaleString()} simulated futures is built month by month from randomly
-                  chosen real months of TSP history ({projection.poolSize} months,{" "}
-                  {fmtMonth(projection.poolStart)} to {fmtMonth(projection.poolEnd)}). Every fund gets that same month's actual return, so
+                  Each of {shown.trials.toLocaleString()} simulated futures is built month by month from randomly
+                  chosen real months of TSP history ({shown.poolSize} months,{" "}
+                  {fmtMonth(shown.poolStart)} to {fmtMonth(shown.poolEnd)}). Every fund gets that same month's actual return, so
                   funds rise and fall together the way they really did.
                 </li>
                 <li>
@@ -1361,8 +1520,11 @@ function TspProjectionInner() {
                   table below, go in monthly and are split by your future allocation.
                 </li>
                 <li>
-                  Figures are in future dollars, not adjusted for inflation, and assume no withdrawals. Past returns
-                  don't guarantee future results.
+                  {todaysDollars
+                    ? `Figures are in today's dollars: each year's amounts are divided by ${inflationPct}% inflation compounded to that year, so they show buying power in ${CONTRIBUTION_LIMITS.year} terms. "What you put in" is deflated the same way.`
+                    : "Figures are in future dollars, not adjusted for inflation. Switch to today's dollars to see buying power."}{" "}
+                  No withdrawals are assumed{retireIndex > 0 ? "; after you retire the balance keeps growing with no new contributions" : ""}.
+                  Past returns don't guarantee future results.
                 </li>
               </ul>
             </details>
@@ -1425,7 +1587,45 @@ function TspProjectionInner() {
         {salary === 0 && contribMode === "percent" ? (
           <div style={{ fontSize: "0.85rem", color: "#64748b" }}>Enter your salary to see the breakdown.</div>
         ) : (
-          <BreakdownTable breakdown={breakdown} age={age} />
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                gap: "0.75rem",
+                fontSize: "0.85rem",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {[
+                ["Going in this year", breakdown.total, true],
+                ["Your Traditional", breakdown.regularTraditional + breakdown.catchUpTraditional, false],
+                ["Your Roth", breakdown.regularRoth + breakdown.catchUpRoth, false],
+                ["Agency (Traditional)", breakdown.agencyTotal, false],
+              ].map(([label, amount, main]) => (
+                <div key={label as string}>
+                  <div style={{ color: "#64748b", fontSize: "0.75rem" }}>{label as string}</div>
+                  <div style={{ fontWeight: main ? 800 : 700, fontSize: main ? "1.2rem" : "1rem", color: "#0F2244" }}>
+                    {fmtMoney(amount as number)}
+                  </div>
+                  <div style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                    {fmtMoney((amount as number) / 26)} per pay period
+                  </div>
+                </div>
+              ))}
+            </div>
+            <details
+              style={{ marginTop: "0.9rem" }}
+              onToggle={(e) => setBreakdownOpen(e.currentTarget.open)}
+            >
+              <summary style={{ cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, color: "#2A7D9C" }}>
+                {breakdownOpen ? "Hide" : "Show"} full breakdown (regular, catch-up, agency, per month)
+              </summary>
+              <div style={{ marginTop: "0.75rem" }}>
+                <BreakdownTable breakdown={breakdown} age={age} />
+              </div>
+            </details>
+          </>
         )}
         {breakdown.traditionalRedirectedToRoth > 0.5 && (
           <div

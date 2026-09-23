@@ -25,7 +25,7 @@ import {
   contributionBreakdown,
   projectContributions,
 } from "../src/lib/tspProjection.ts";
-import { simulateProjection } from "../src/lib/tspSimulation.ts";
+import { inTodaysDollars, simulateProjection } from "../src/lib/tspSimulation.ts";
 
 const failures: string[] = [];
 let checks = 0;
@@ -167,6 +167,28 @@ const spread = (fund: string) => {
 };
 expect(spread("G") < 1.1, `G Fund 20-year spread should be narrow, got ${spread("G").toFixed(2)}`);
 expect(spread("C") > 1.5, `C Fund 20-year spread should be wide, got ${spread("C").toFixed(2)}`);
+
+// Retirement age stops contributions from that age on
+const retiring = projectContributions(
+  { salary: 100_000, mode: "percent", traditional: 10, roth: 0, age: 58 },
+  { traditional: 0, roth: 0 },
+  6,
+  L.year,
+  60,
+);
+expect(retiring[0].total > 0 && retiring[1].total > 0, "contributes at 58 and 59");
+expect(retiring.slice(2).every((r) => r.retired && r.total === 0), "no contributions from 60");
+expect(
+  near(retiring[5].cumulativeTraditional, retiring[1].cumulativeTraditional),
+  "running total flat after retiring",
+);
+
+// Today's dollars: year i divided by (1 + inflation)^i
+const real = inTodaysDollars(sim, 3);
+expect(near(real.bands[0].p50, sim.bands[0].p50), "today's value unchanged at year 0");
+expect(near(real.bands[20].p50, sim.bands[20].p50 / 1.03 ** 20), "year 20 deflated by 1.03^20");
+expect(near(real.average.total, sim.average.total / 1.03 ** 20), "end scenario deflated");
+expect(near(real.average.traditional + real.average.roth, real.average.total), "deflated split still adds up");
 
 // --- Report -----------------------------------------------------------------
 if (failures.length) {

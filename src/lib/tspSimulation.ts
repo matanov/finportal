@@ -17,8 +17,9 @@
  *   - Each year's contributions (from projectContributions) arrive in 12 equal
  *     monthly amounts, split across funds by the future allocation.
  *   - Traditional and Roth money in the same fund earn the same return.
- *   - Nominal dollars, no inflation adjustment, no fees beyond those already
- *     reflected in TSP share prices, no withdrawals.
+ *   - Nominal (future) dollars, no fees beyond those already reflected in TSP
+ *     share prices, no withdrawals. inTodaysDollars() converts a result to
+ *     today's dollars for display.
  *
  * "Below average", "average" and "above average" are the 25th, 50th and 75th
  * percentiles of the simulated outcomes: 1 in 4 trials ended below the first,
@@ -230,5 +231,35 @@ export function simulateProjection({
     below: scenarioAt(25),
     average: scenarioAt(50),
     above: scenarioAt(75),
+  };
+}
+
+/**
+ * The same result expressed in today's dollars: every value at year i is
+ * divided by (1 + inflation)^i. The simulation itself runs in future
+ * (nominal) dollars; this only changes how the numbers are shown.
+ */
+export function inTodaysDollars(result: SimulationResult, inflationPct: number): SimulationResult {
+  const rate = Math.max(-0.99, (inflationPct || 0) / 100);
+  const factor = (i: number) => (1 + rate) ** i;
+  const n = result.bands.length - 1;
+  const scale = (s: Scenario): Scenario => ({
+    total: s.total / factor(n),
+    traditional: s.traditional / factor(n),
+    roth: s.roth / factor(n),
+  });
+  return {
+    ...result,
+    bands: result.bands.map((b, i) => ({
+      p10: b.p10 / factor(i),
+      p25: b.p25 / factor(i),
+      p50: b.p50 / factor(i),
+      p75: b.p75 / factor(i),
+      p90: b.p90 / factor(i),
+    })),
+    contributed: result.contributed.map((v, i) => v / factor(i)),
+    below: scale(result.below),
+    average: scale(result.average),
+    above: scale(result.above),
   };
 }
