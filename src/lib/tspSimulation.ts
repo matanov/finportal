@@ -17,6 +17,9 @@
  *   - Each year's contributions (from projectContributions) arrive in 12 equal
  *     monthly amounts, split across funds by the future allocation.
  *   - Traditional and Roth money in the same fund earn the same return.
+ *   - Mutual Fund Window balances have no published history, so each row grows
+ *     at its own fixed yearly return, identically in every trial, and takes no
+ *     new contributions.
  *   - Nominal (future) dollars, no fees beyond those already reflected in TSP
  *     share prices, no withdrawals. inTodaysDollars() converts a result to
  *     today's dollars for display.

@@ -16,7 +16,7 @@ All live calculators are listed at **[/calculators](https://fersmath.com/calcula
 | GS Salary History Lookup | `/calculator/salary-lookup` | `src/lib/payLookup.ts` |
 | TSP Fund Performance | `/tsp/performance` | `public/tsp/*.json` (generated, see below) |
 | TSP Monte Carlo Projection | `/tsp/monte-carlo` | `public/tsp/*.json` (generated, see below) |
-| TSP Projection Calculator | `/tsp/projection` | `src/lib/tspProjection.ts` (contribution rules, IRS limits), `src/lib/tspSimulation.ts` (Monte Carlo); tests: `npm run test:tsp`; business logic in [Issue #5](https://github.com/matanov/finportal/issues/5), yearly updates in [Issue #6](https://github.com/matanov/finportal/issues/6) |
+| TSP Projection Calculator | `/tsp/projection` | `src/lib/tspProjection.ts` (contribution rules, IRS limits), `src/lib/tspSimulation.ts` (Monte Carlo); tests: `npm run test:tsp`; **business logic reference: [`docs/tsp-projection-calculator.md`](docs/tsp-projection-calculator.md)**; status and open work in [Issue #5](https://github.com/matanov/finportal/issues/5), yearly updates in [Issue #6](https://github.com/matanov/finportal/issues/6) |
 | FERS Special Retirement Supplement | `/calculator/fers-supplement` | `src/lib/fersSupplement.ts` |
 
 Articles are MDX files (Markdown that can also embed the interactive chart components) in an Astro [content collection](https://docs.astro.build/en/guides/content-collections/) — see [Writing Articles](#writing-articles) below.
@@ -55,6 +55,8 @@ Live site: **https://fersmath.com**
 │   ├── fetch-tsp-prices.mjs      # tsp.gov CSV -> src/data/tsp/fund-price-history.csv
 │   ├── build-tsp-lookup.mjs      # src/data/tsp/*.csv -> public/tsp/*.json
 │   └── consolidate-feedback.mjs  # feedback/inbox/*.json -> feedback/log.jsonl (run daily by Actions)
+├── docs/
+│   └── tsp-projection-calculator.md  # End-to-end business logic of the TSP Projection Calculator
 ├── workers/
 │   └── feedback-worker/          # Cloudflare Worker behind the feedback form — see its own README
 ├── feedback/
