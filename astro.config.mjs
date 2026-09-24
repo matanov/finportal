@@ -26,6 +26,11 @@ export default defineConfig({
   site,
 
   vite: {
+    // `astro check` and `astro build` pre-bundle dependencies in production mode (production React).
+    // Sharing Vite's cache with a running `astro dev` let them overwrite its copy, and on the dev
+    // server's next restart every React island failed with "_jsxDEV is not a function". The dev server
+    // gets its own cache so the two can't collide.
+    cacheDir: process.argv.includes('dev') ? 'node_modules/.vite-dev' : undefined,
     plugins: [tailwindcss()],
   },
 
