@@ -12,7 +12,15 @@
  */
 
 import ProjectionChart from "./ProjectionChart";
-import { fundLabel, type AllocationRow, type ContributionBreakdown, type ContributionYear, type HoldingRow } from "../lib/tspProjection";
+import {
+  fixedReturnPct,
+  fundLabel,
+  isFixedRateFund,
+  type AllocationRow,
+  type ContributionBreakdown,
+  type ContributionYear,
+  type HoldingRow,
+} from "../lib/tspProjection";
 import type { SimulationResult } from "../lib/tspSimulation";
 
 const fmtMoney = (n: number) =>
@@ -164,7 +172,10 @@ export default function TspProjectionReport({
               ) : (
                 heldRows.map((h) => (
                   <tr key={h.id}>
-                    <td style={{ ...td, textAlign: "left" }}>{fundLabel(h.fund)}</td>
+                    <td style={{ ...td, textAlign: "left" }}>
+                      {fundLabel(h.fund)}
+                      {isFixedRateFund(h.fund) ? ` (assumed ${fixedReturnPct(h)}% a year)` : ""}
+                    </td>
                     <td style={td}>{fmtMoney(h.amount)}</td>
                   </tr>
                 ))
@@ -369,11 +380,17 @@ export default function TspProjectionReport({
           by paycheck over 26 pay periods, with FERS agency contributions (1% automatic plus up to 4% matching on regular contributions; catch-up is not matched). Salary
           and limits are held flat.
         </li>
-        {result && (
+        {result && result.poolSize > 0 && (
           <li>
             The projection replays randomly chosen real months of TSP history ({result.trials.toLocaleString()}{" "}
             simulations, {result.poolSize} months of data). Below average, average and above average are the 25th,
             50th and 75th percentiles of the results.
+          </li>
+        )}
+        {heldRows.some((h) => isFixedRateFund(h.fund)) && (
+          <li>
+            Mutual Fund Window balances grow at the fixed yearly return shown beside them, the same in every
+            simulation. The TSP publishes no history for them.
           </li>
         )}
         <li>

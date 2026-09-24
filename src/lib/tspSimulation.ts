@@ -26,7 +26,14 @@
  * half below the second, 3 in 4 below the third.
  */
 
-import { splitHolding, type AllocationRow, type ContributionYear, type HoldingRow } from "./tspProjection.ts";
+import {
+  fixedReturnPct,
+  isFixedRateFund,
+  splitHolding,
+  type AllocationRow,
+  type ContributionYear,
+  type HoldingRow,
+} from "./tspProjection.ts";
 
 export interface MonthlyReturns {
   asOf: string;
@@ -136,9 +143,16 @@ export function simulateProjection({
     if (fundList.every((f) => monthlyReturns.returns[f][i] != null)) pool.push(i);
   }
 
+  // Mutual Fund Window rows have no published history, so each one grows at its own fixed yearly
+  // return, identical in every trial. Their slots sit after the historical funds in the balance arrays.
+  const fixedRows = holdings.filter((h) => isFixedRateFund(h.fund) && h.amount > 0);
+  const k = fixedRows.length;
+  const slots = n + k;
+  const fixedGrowth = Float64Array.from(fixedRows, (h) => (1 + fixedReturnPct(h) / 100) ** (1 / 12));
+
   // Starting balances per fund, Traditional and Roth kept apart.
-  const startTrad = new Float64Array(n);
-  const startRoth = new Float64Array(n);
+  const startTrad = new Float64Array(slots);
+  const startRoth = new Float64Array(slots);
   for (const h of holdings) {
     const i = fi.get(h.fund);
     if (i == null || !(h.amount > 0)) continue;
@@ -146,6 +160,11 @@ export function simulateProjection({
     startTrad[i] += split.traditional;
     startRoth[i] += split.roth;
   }
+  fixedRows.forEach((h, j) => {
+    const split = splitHolding(h);
+    startTrad[n + j] = split.traditional;
+    startRoth[n + j] = split.roth;
+  });
   const startTotal = startTrad.reduce((a, b) => a + b, 0) + startRoth.reduce((a, b) => a + b, 0);
 
   // Monthly contribution per fund for each year.
@@ -166,8 +185,8 @@ export function simulateProjection({
   const endTrad = new Float64Array(trials);
   const endRoth = new Float64Array(trials);
   const rand = mulberry32(seed);
-  const trad = new Float64Array(n);
-  const roth = new Float64Array(n);
+  const trad = new Float64Array(slots);
+  const roth = new Float64Array(slots);
 
   for (let t = 0; t < trials; t++) {
     trad.set(startTrad);
@@ -184,6 +203,10 @@ export function simulateProjection({
             roth[i] *= 1 + r[i];
           }
         }
+        for (let j = 0; j < k; j++) {
+          trad[n + j] *= fixedGrowth[j];
+          roth[n + j] *= fixedGrowth[j];
+        }
         // Contributions land at the end of the month, after that month's return.
         for (let i = 0; i < n; i++) {
           trad[i] += monthTrad * w[i];
@@ -191,12 +214,12 @@ export function simulateProjection({
         }
       }
       let sum = 0;
-      for (let i = 0; i < n; i++) sum += trad[i] + roth[i];
+      for (let i = 0; i < slots; i++) sum += trad[i] + roth[i];
       totals[y + 1][t] = sum;
     }
     let st = 0;
     let sr = 0;
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < slots; i++) {
       st += trad[i];
       sr += roth[i];
     }
@@ -224,9 +247,10 @@ export function simulateProjection({
 
   return {
     trials,
-    poolSize: pool.length,
-    poolStart: pool.length ? monthlyReturns.months[pool[0]] : null,
-    poolEnd: pool.length ? monthlyReturns.months[pool[pool.length - 1]] : null,
+    // With only fixed-rate money there are no historical funds, so no history is used
+    poolSize: n > 0 ? pool.length : 0,
+    poolStart: n > 0 && pool.length ? monthlyReturns.months[pool[0]] : null,
+    poolEnd: n > 0 && pool.length ? monthlyReturns.months[pool[pool.length - 1]] : null,
     bands,
     contributed,
     below: scenarioAt(25),

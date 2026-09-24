@@ -27,7 +27,12 @@ import { readFileSync } from "node:fs";
 import {
   CONTRIBUTION_LIMITS as L,
   PAY_PERIODS,
+  DEFAULT_FIXED_RETURN_PCT,
+  FIXED_RATE_FUND,
   contributionBreakdown,
+  fixedReturnPct,
+  fundLabel,
+  isFixedRateFund,
   projectContributions,
   splitHolding,
   summarizeHoldings,
@@ -274,6 +279,81 @@ expect(
     near(oneRow.average.traditional, twoRows.average.traditional),
   "a 30% Roth row projects the same as separate Traditional and Roth rows",
 );
+
+// --- Mutual Fund Window: fixed-rate holdings ---------------------------------
+expect(FIXED_RATE_FUND === "MFW" && DEFAULT_FIXED_RETURN_PCT === 6, "the Mutual Fund Window defaults to 6% a year");
+expect(isFixedRateFund("MFW") && !isFixedRateFund("C") && !isFixedRateFund("L2030"), "only MFW is fixed-rate");
+expect(fundLabel("MFW") === "Mutual Fund Window", "MFW is labelled as the Mutual Fund Window");
+expect(fixedReturnPct({}) === 6, "a missing return uses the 6% default");
+expect(fixedReturnPct({ annualReturnPct: 8.5 }) === 8.5, "a chosen return is used as entered");
+expect(fixedReturnPct({ annualReturnPct: 0 }) === 0, "0% is a real choice, not treated as missing");
+expect(fixedReturnPct({ annualReturnPct: -5 }) === 0, "a negative return is held at 0%");
+expect(fixedReturnPct({ annualReturnPct: 150 }) === 100, "a return over 100% is held at 100%");
+expect(fixedReturnPct({ annualReturnPct: NaN }) === 6, "an invalid return uses the 6% default");
+
+const mfwRow = (amount: number, rothPct = 0, annualReturnPct?: number) => ({
+  id: "m" + amount + "-" + rothPct + "-" + annualReturnPct,
+  fund: "MFW",
+  amount,
+  rothPct,
+  annualReturnPct,
+});
+const noContrib = projectContributions(
+  { salary: 0, mode: "percent", traditional: 0, roth: 0, age: 40 },
+  { traditional: 100_000, roth: 0 },
+  20,
+);
+const cAlloc = [{ id: "a", fund: "C", percent: 100 }];
+const mfwSim = (holdings: ReturnType<typeof mfwRow>[]) =>
+  simulateProjection({ monthlyReturns, holdings, allocation: cAlloc, years: noContrib });
+
+// Only MFW money: exactly 6% a year, the same in every simulated future, and no history is used
+const only6 = mfwSim([mfwRow(100_000, 0, 6)]);
+for (const y of [0, 1, 5, 10, 20]) {
+  const expected = 100_000 * 1.06 ** y;
+  const b = only6.bands[y];
+  expect(near(b.p10, expected) && near(b.p50, expected) && near(b.p90, expected), `MFW alone at 6% is exactly $100,000 x 1.06^${y}`);
+}
+expect(only6.poolSize === 0 && only6.poolStart === null && only6.poolEnd === null, "MFW alone uses no historical months");
+expect(near(only6.below.total, only6.above.total), "MFW alone has no spread between outcomes");
+expect(near(mfwSim([mfwRow(100_000)]).average.total, 100_000 * 1.06 ** 20), "a row with no return entered grows at the 6% default");
+expect(near(mfwSim([mfwRow(100_000, 0, 0)]).average.total, 100_000), "0% keeps the balance flat");
+expect(near(mfwSim([mfwRow(100_000, 0, 9)]).average.total, 100_000 * 1.09 ** 20), "9% compounds at 9% a year");
+expect(mfwSim([mfwRow(0, 0, 6)]).average.total === 0, "an empty MFW row adds nothing");
+
+// Roth share applies to MFW money, and grows with it
+const mfwRoth = mfwSim([mfwRow(100_000, 40, 6)]).average;
+expect(near(mfwRoth.roth, 40_000 * 1.06 ** 20) && near(mfwRoth.traditional, 60_000 * 1.06 ** 20), "40% Roth MFW keeps its 40/60 split as it grows");
+
+// Two MFW rows at different rates each grow at their own rate
+const twoRates = simulateProjection({
+  monthlyReturns,
+  holdings: [mfwRow(50_000, 0, 4), mfwRow(50_000, 0, 8)],
+  allocation: cAlloc,
+  years: noContrib.slice(0, 10),
+}).average.total;
+expect(near(twoRates, 50_000 * 1.04 ** 10 + 50_000 * 1.08 ** 10), "each MFW row grows at its own return");
+
+// MFW money is independent of the historical funds and of contributions: adding it shifts every
+// result by exactly its own growth, and leaves the historical pool untouched
+const withMfw = simulateProjection({ ...simArgs, holdings: [...simArgs.holdings, mfwRow(50_000, 0, 6)] });
+for (let y = 0; y <= 20; y++) {
+  const shift = 50_000 * 1.06 ** y;
+  expect(
+    near(withMfw.bands[y].p10, sim.bands[y].p10 + shift) &&
+      near(withMfw.bands[y].p50, sim.bands[y].p50 + shift) &&
+      near(withMfw.bands[y].p90, sim.bands[y].p90 + shift),
+    `adding MFW shifts year ${y} by exactly its own growth`,
+  );
+}
+expect(withMfw.poolSize === sim.poolSize && withMfw.poolStart === sim.poolStart, "adding MFW does not shrink the historical pool");
+expect(near(withMfw.average.total, sim.average.total + 50_000 * 1.06 ** 20), "average outcome shifts by MFW's growth");
+expect(
+  near(withMfw.average.traditional + withMfw.average.roth, withMfw.average.total),
+  "Traditional + Roth still add up with MFW in the mix",
+);
+expect(near(withMfw.contributed[0], 150_000), "today's MFW balance counts in what you start with");
+expect(near(summarizeHoldings([mfwRow(50_000, 20, 6)]).total, 50_000), "the balance summary counts MFW money");
 
 // --- Report -----------------------------------------------------------------
 if (failures.length) {

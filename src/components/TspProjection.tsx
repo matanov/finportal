@@ -2,8 +2,12 @@
  * TspProjection.tsx
  *
  * TSP Projection Calculator: inputs only so far.
- *   - Current balances: one row per fund holding (fund, amount, Roth or
- *     Traditional), starting with a single C Fund row; "+ Add fund" adds more.
+ *   - Current balances: one row per fund holding (fund and total amount),
+ *     starting with a single C Fund row; "+ Add fund" adds more. One "Roth %
+ *     of balance" box covers the whole account, since the TSP website only
+ *     shows the Roth share account-wide. The Mutual Fund Window can also be
+ *     chosen: it has no published history, so its rows take a fixed yearly
+ *     return (6% to start) instead of being replayed from real months.
  *   - Contributions: current age, salary, and separate Traditional and Roth
  *     elections (as the TSP takes them), each a percent of salary or a
  *     dollar amount per year, with the current IRS limits alongside.
@@ -30,14 +34,17 @@ import TspProjectionReport from "./TspProjectionReport";
 import { inTodaysDollars, simulateProjection, type MonthlyReturns, type Scenario } from "../lib/tspSimulation";
 import {
   CONTRIBUTION_LIMITS,
+  DEFAULT_FIXED_RETURN_PCT,
   DEFAULT_FUND,
   DEFAULT_HORIZON,
   FALLBACK_FUNDS,
+  FIXED_RATE_FUND,
   HORIZON_OPTIONS,
   checkAllocation,
   contributionBreakdown,
   employeeLimit,
   fundLabel,
+  isFixedRateFund,
   newId,
   orderFunds,
   projectContributions,
@@ -190,25 +197,30 @@ function PercentInput({
   id,
   value,
   onChange,
+  allowDecimals = false,
 }: {
   id: string;
   value: number;
   onChange: (v: number) => void;
+  /** Whole percents by default; a return such as 6.5% needs decimals */
+  allowDecimals?: boolean;
 }) {
   return (
     <div style={{ position: "relative" }}>
       <input
         id={id}
         type="number"
-        inputMode="numeric"
+        inputMode={allowDecimals ? "decimal" : "numeric"}
         min={0}
         max={100}
-        step={1}
+        step={allowDecimals ? 0.5 : 1}
         placeholder="0"
         value={value === 0 ? "" : value}
-        onChange={(e) =>
-          onChange(e.target.value === "" ? 0 : Math.min(100, Math.max(0, Math.round(Number(e.target.value)))))
-        }
+        onChange={(e) => {
+          if (e.target.value === "") return onChange(0);
+          const n = Number(e.target.value);
+          onChange(Math.min(100, Math.max(0, allowDecimals ? n : Math.round(n))));
+        }}
         style={{ ...inputStyle, paddingRight: "1.6rem" }}
       />
       <span
@@ -1082,9 +1094,15 @@ function TspProjectionInner() {
                   </label>
                   <FundSelect
                     id={`${row.id}-fund`}
-                    funds={funds}
+                    funds={[...funds, FIXED_RATE_FUND]}
                     value={row.fund}
-                    onChange={(fund) => updateHolding(row.id, { fund })}
+                    onChange={(fund) =>
+                      updateHolding(row.id, {
+                        fund,
+                        // The Mutual Fund Window takes a yearly return (6% to start); other funds use real history
+                        annualReturnPct: isFixedRateFund(fund) ? (row.annualReturnPct ?? DEFAULT_FIXED_RETURN_PCT) : undefined,
+                      })
+                    }
                   />
                 </div>
                 <div style={{ flex: "1 1 130px" }}>
@@ -1112,9 +1130,33 @@ function TspProjectionInner() {
                 ) : (
                   <span style={{ width: CONTROL_HEIGHT }} aria-hidden="true" />
                 )}
+                {isFixedRateFund(row.fund) && (
+                  // Its own line under the row, so the longer fund name and the amount keep their full width
+                  <div style={{ flex: "1 1 100%" }}>
+                    <div style={{ maxWidth: "150px" }}>
+                      <label htmlFor={`${row.id}-return`} style={labelStyle}>
+                        Return (%/yr)
+                      </label>
+                      <PercentInput
+                        id={`${row.id}-return`}
+                        value={row.annualReturnPct ?? DEFAULT_FIXED_RETURN_PCT}
+                        onChange={(annualReturnPct) => updateHolding(row.id, { annualReturnPct })}
+                        allowDecimals
+                      />
+                    </div>
+                  </div>
+                )}
               </Row>
             ))}
             <AddButton onClick={addHolding}>Add fund</AddButton>
+            {holdings.some((h) => isFixedRateFund(h.fund)) && (
+              <div style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+                <strong>Mutual Fund Window:</strong> the TSP doesn't publish a fund history for these holdings, so they
+                are projected at the fixed yearly return you enter ({DEFAULT_FIXED_RETURN_PCT}% to start) instead of being
+                replayed from real months. They have no ups and downs in the projection, and new contributions can't
+                be directed into them.
+              </div>
+            )}
 
             <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
               <div style={{ maxWidth: "150px" }}>
@@ -1551,16 +1593,27 @@ function TspProjectionInner() {
             <details style={{ marginTop: "0.6rem", fontSize: "0.8rem", color: "#475569", lineHeight: 1.6 }}>
               <summary style={{ cursor: "pointer", fontWeight: 600, color: "#2A7D9C" }}>How the projection works</summary>
               <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem", listStyle: "disc" }}>
-                <li>
-                  Each of {shown.trials.toLocaleString()} simulated futures is built month by month from randomly
-                  chosen real months of TSP history ({shown.poolSize} months,{" "}
-                  {fmtMonth(shown.poolStart)} to {fmtMonth(shown.poolEnd)}). Every fund gets that same month's actual return, so
-                  funds rise and fall together the way they really did.
-                </li>
-                <li>
-                  Only months where all of your funds existed are used; adding a newer fund (such as a recent L Fund)
-                  shortens the history the simulation draws from.
-                </li>
+                {shown.poolSize > 0 && (
+                  <>
+                    <li>
+                      Each of {shown.trials.toLocaleString()} simulated futures is built month by month from randomly
+                      chosen real months of TSP history ({shown.poolSize} months,{" "}
+                      {fmtMonth(shown.poolStart)} to {fmtMonth(shown.poolEnd)}). Every TSP fund gets that same month's actual
+                      return, so funds rise and fall together the way they really did.
+                    </li>
+                    <li>
+                      Only months where all of your TSP funds existed are used; adding a newer fund (such as a recent L
+                      Fund) shortens the history the simulation draws from.
+                    </li>
+                  </>
+                )}
+                {holdings.some((h) => isFixedRateFund(h.fund) && h.amount > 0) && (
+                  <li>
+                    Mutual Fund Window balances grow at the fixed yearly return you entered, each row at its own rate,
+                    the same in every simulated future. The TSP publishes no history for them, so they add no ups and
+                    downs, and they don't shorten the history used for your other funds.
+                  </li>
+                )}
                 <li>
                   <strong>Below average</strong>, <strong>average</strong> and <strong>above average</strong> are the
                   25th, 50th and 75th percentiles: a quarter of outcomes ended below the first, half below the second,

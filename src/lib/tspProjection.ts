@@ -18,6 +18,27 @@ export interface HoldingRow {
   amount: number;
   /** Percent of this balance held as Roth, 0 to 100; the rest is Traditional */
   rothPct: number;
+  /** Assumed yearly return in percent. Only used for fixed-rate funds (the Mutual Fund Window). */
+  annualReturnPct?: number;
+}
+
+/**
+ * The TSP Mutual Fund Window. TSP publishes no fund-level history for it, so
+ * its balances can't be replayed from real months like the other funds. They
+ * grow at a fixed yearly return the user chooses instead, and new
+ * contributions can't be directed into it.
+ */
+export const FIXED_RATE_FUND = "MFW";
+export const DEFAULT_FIXED_RETURN_PCT = 6;
+
+export function isFixedRateFund(fund: string): boolean {
+  return fund === FIXED_RATE_FUND;
+}
+
+/** A fixed-rate row's yearly return in percent, kept within 0-100; a missing or invalid value uses the default */
+export function fixedReturnPct(row: Pick<HoldingRow, "annualReturnPct">): number {
+  const v = row.annualReturnPct;
+  return typeof v === "number" && Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : DEFAULT_FIXED_RETURN_PCT;
 }
 
 /**
@@ -248,6 +269,7 @@ export const FALLBACK_FUNDS = [
 const CORE_FUNDS = ["G", "F", "C", "S", "I"];
 
 export function fundLabel(slug: string): string {
+  if (slug === FIXED_RATE_FUND) return "Mutual Fund Window";
   if (slug === "L-Income") return "L Income";
   const m = slug.match(/^L(\d{4})$/);
   if (m) return `L ${m[1]}`;

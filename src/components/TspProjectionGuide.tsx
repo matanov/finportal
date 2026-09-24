@@ -87,8 +87,9 @@ export default function TspProjectionGuide() {
           Enter one row per fund, with that fund's total balance. Then, in <strong>Roth % of balance</strong>,
           enter the share of your whole account that is Roth (for example, $30,000 of Roth in a $100,000
           account is 30%); leave it blank if it is all Traditional. The TSP website shows this for the account
-          as a whole, not fund by fund. Use the latest balances you have; the projection starts from whatever
-          you enter.
+          as a whole, not fund by fund. If you hold money in the TSP Mutual Fund Window, choose{" "}
+          <strong>Mutual Fund Window</strong> as the fund and enter the yearly return you want to assume (it starts
+          at 6%). Use the latest balances you have; the projection starts from whatever you enter.
         </li>
       </Section>
 
