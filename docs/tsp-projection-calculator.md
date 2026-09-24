@@ -92,8 +92,10 @@ accept any number and clamp the same way, so they are safe to call directly.
 
 ### 3.1 The Roth share of current balances
 
-The TSP website shows a Roth share for the account as a whole, not fund by fund, so the calculator asks
-for one percentage. Each fund row's balance is split with it:
+Neither the TSP website's account view nor the TSP statement shows Traditional and Roth fund by fund. They
+show each fund's balance and one overall Roth and Traditional split for the account (confirmed from a real
+account on 2026-09-24), so the calculator asks for that one percentage. Each fund row's balance is split
+with it:
 
 ```
 roth        = amount × rothPct / 100
@@ -499,6 +501,9 @@ document on the date shown.
   to `/contribution-limits/`. `CONTRIBUTION_LIMITS.source` was updated.
 - **2026-09-24, earlier the same day.** The per-fund Roth checkmark became one account-wide "Roth % of balance"
   box, and the Mutual Fund Window was added with a fixed yearly return.
+- **2026-09-24, Guide corrected.** The Guide's "Online" and "Statement" bullets said the TSP shows Traditional
+  and Roth for each fund. The site owner checked their own account and statement: both show only the overall
+  Roth and Traditional percentage. The two bullets now say so.
 
 ## 13. Tests
 

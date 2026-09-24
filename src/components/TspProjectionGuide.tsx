@@ -75,13 +75,14 @@ export default function TspProjectionGuide() {
           <a href={TSP_URL} target="_blank" rel="noopener noreferrer" style={{ color: "#2A7D9C" }}>
             tsp.gov
           </a>{" "}
-          and open your account balance details. They list each fund you hold, and for each fund how much is
-          Traditional and how much is Roth.
+          and open your account balance details. They list each fund you hold and its balance, and they show
+          what share of your whole account is Roth and what share is Traditional. They do not split each
+          fund into Traditional and Roth.
         </li>
         <li>
           <Tag>Statement</Tag>
-          Your TSP statement has a section showing your balance in each fund, split into Traditional and Roth
-          (it may call these balances by tax treatment or by source).
+          Your TSP statement shows your balance in each fund and the same account-wide Roth and Traditional
+          split, not a split for each fund.
         </li>
         <li>
           Enter one row per fund, with that fund's total balance. Then, in <strong>Roth % of balance</strong>,
