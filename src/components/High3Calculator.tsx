@@ -379,85 +379,6 @@ function ResultsPanel({ result }: { result: High3Result }) {
         </div>
       </div>
 
-      {/* FERS Annuity estimate */}
-      <div
-        style={{
-          background: "#f0fdf4",
-          border: "1px solid #bbf7d0",
-          borderRadius: "0.75rem",
-          padding: "1.25rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          style={{ fontWeight: 700, color: "#166534", marginBottom: "0.75rem" }}
-        >
-          FERS Basic Annuity Estimates (based on this High-3)
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "0.75rem",
-          }}
-        >
-          {[10, 15, 20, 25, 30, 35].map((yrs) => {
-            // Always the 1% standard rate: this panel doesn't ask for a retirement age, and the 1.1%
-            // rate needs BOTH age 62+ AND 20+ years — years alone isn't enough. Assuming 1.1% here would
-            // overstate the annuity for anyone retiring under 62. See the linked calculator for that case.
-            const annuity = result.high3Average * 0.01 * yrs;
-            return (
-              <div
-                key={yrs}
-                style={{
-                  background: "#fff",
-                  borderRadius: "0.5rem",
-                  padding: "0.75rem",
-                  border: "1px solid #d1fae5",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#6b7280",
-                    marginBottom: "0.25rem",
-                  }}
-                >
-                  {yrs} years × 1% multiplier
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    color: "#166534",
-                  }}
-                >
-                  {fmt(annuity)}/yr
-                </div>
-                <div style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
-                  {fmt(annuity / 12)}/mo
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div
-          style={{
-            fontSize: "0.75rem",
-            color: "#6b7280",
-            marginTop: "0.75rem",
-          }}
-        >
-          * Uses the 1% standard rate for every row. If you'll be 62 or older at retirement with 20+ years
-          of service, you qualify for 1.1% instead — use the{" "}
-          <a href="/calculator/fers-annuity" style={{ color: "#166534", fontWeight: 600 }}>
-            FERS Basic Annuity Calculator
-          </a>{" "}
-          for a figure that accounts for your actual retirement age, special-provision service, and a
-          survivor benefit election. These are gross estimates before taxes and deductions.
-        </div>
-      </div>
-
       {/* Period breakdown */}
       <div
         style={{
@@ -583,6 +504,96 @@ function ResultsPanel({ result }: { result: High3Result }) {
             </tfoot>
           </table>
         </div>
+      </div>
+
+      {/* FERS Annuity estimate */}
+      <div
+        style={{
+          background: "#f0fdf4",
+          border: "1px solid #bbf7d0",
+          borderRadius: "0.75rem",
+          padding: "1.25rem",
+          marginTop: "1.5rem",
+        }}
+      >
+        <div
+          style={{ fontWeight: 700, color: "#166534", marginBottom: "0.75rem" }}
+        >
+          Possible Retirements — FERS Basic Annuity Estimates (based on this High-3)
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "0.75rem",
+          }}
+        >
+          {[10, 15, 20, 25, 30, 35].map((yrs) => {
+            // Always the 1% standard rate: this panel doesn't ask for a retirement age, and the 1.1%
+            // rate needs BOTH age 62+ AND 20+ years — years alone isn't enough. Assuming 1.1% here would
+            // overstate the annuity for anyone retiring under 62. See the linked calculator for that case.
+            const annuity = result.high3Average * 0.01 * yrs;
+            return (
+              <div
+                key={yrs}
+                style={{
+                  background: "#fff",
+                  borderRadius: "0.5rem",
+                  padding: "0.75rem",
+                  border: "1px solid #d1fae5",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#6b7280",
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  {yrs} years × 1% multiplier
+                </div>
+                <div
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    color: "#166534",
+                  }}
+                >
+                  {fmt(annuity)}/yr
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+                  {fmt(annuity / 12)}/mo
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div
+          style={{
+            fontSize: "0.75rem",
+            color: "#6b7280",
+            marginTop: "0.75rem",
+          }}
+        >
+          * Uses the 1% standard rate for every row. If you'll be 62 or older at retirement with 20+ years
+          of service, you qualify for 1.1% instead — these are gross estimates before taxes and deductions.
+        </div>
+        <a
+          href="/calculator/fers-annuity"
+          style={{
+            display: "inline-block",
+            marginTop: "1rem",
+            padding: "0.6rem 1.25rem",
+            background: "#166534",
+            color: "#fff",
+            borderRadius: "0.5rem",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          Open the FERS Basic Annuity Calculator →
+        </a>
       </div>
     </div>
   );
