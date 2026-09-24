@@ -16,8 +16,20 @@ export interface HoldingRow {
   fund: string;
   /** Current balance in dollars */
   amount: number;
-  /** true = Roth balance, false = Traditional */
-  roth: boolean;
+  /** Percent of this balance held as Roth, 0 to 100; the rest is Traditional */
+  rothPct: number;
+}
+
+/**
+ * Splits one balance row into its Traditional and Roth dollars. The percent
+ * is clamped to 0-100 and a blank or invalid one counts as 0, so a row can
+ * never produce a negative amount or more than its own balance.
+ */
+export function splitHolding(row: Pick<HoldingRow, "amount" | "rothPct">): { traditional: number; roth: number } {
+  const amount = Math.max(0, row.amount || 0);
+  const pct = Math.min(100, Math.max(0, row.rothPct || 0));
+  const roth = (amount * pct) / 100;
+  return { traditional: amount - roth, roth };
 }
 
 export interface AllocationRow {
@@ -274,9 +286,10 @@ export function summarizeHoldings(rows: HoldingRow[]): HoldingsSummary {
   for (const row of rows) {
     const amount = Math.max(0, row.amount || 0);
     if (amount === 0) continue;
+    const split = splitHolding(row);
     summary.total += amount;
-    if (row.roth) summary.roth += amount;
-    else summary.traditional += amount;
+    summary.traditional += split.traditional;
+    summary.roth += split.roth;
     summary.byFund[row.fund] = (summary.byFund[row.fund] ?? 0) + amount;
   }
   return summary;

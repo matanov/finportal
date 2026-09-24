@@ -26,7 +26,7 @@
  * half below the second, 3 in 4 below the third.
  */
 
-import type { AllocationRow, ContributionYear, HoldingRow } from "./tspProjection";
+import { splitHolding, type AllocationRow, type ContributionYear, type HoldingRow } from "./tspProjection.ts";
 
 export interface MonthlyReturns {
   asOf: string;
@@ -142,8 +142,9 @@ export function simulateProjection({
   for (const h of holdings) {
     const i = fi.get(h.fund);
     if (i == null || !(h.amount > 0)) continue;
-    if (h.roth) startRoth[i] += h.amount;
-    else startTrad[i] += h.amount;
+    const split = splitHolding(h);
+    startTrad[i] += split.traditional;
+    startRoth[i] += split.roth;
   }
   const startTotal = startTrad.reduce((a, b) => a + b, 0) + startRoth.reduce((a, b) => a + b, 0);
 

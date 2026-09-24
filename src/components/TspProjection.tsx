@@ -866,6 +866,9 @@ export default function TspProjection() {
   );
 }
 
+/** A balance row as typed in: fund and amount. The Roth share is one number for the whole account. */
+type HoldingInput = Omit<HoldingRow, "rothPct">;
+
 /** First fund in `funds` not already used by a row, else the default */
 function nextFund(funds: string[], used: string[]): string {
   return funds.find((f) => !used.includes(f)) ?? DEFAULT_FUND;
@@ -873,10 +876,14 @@ function nextFund(funds: string[], used: string[]): string {
 
 function TspProjectionInner() {
   const [funds, setFunds] = useState<string[]>(orderFunds(FALLBACK_FUNDS));
-  const [holdings, setHoldings] = useState<HoldingRow[]>([
+  const [holdingRows, setHoldingRows] = useState<HoldingInput[]>([
     // Fixed ids for the starting rows so server and client render the same markup
-    { id: "h-0", fund: DEFAULT_FUND, amount: 0, roth: false },
+    { id: "h-0", fund: DEFAULT_FUND, amount: 0 },
   ]);
+  // One Roth share for the whole current balance: the TSP website only shows it for the account, not by fund.
+  const [balanceRothPct, setBalanceRothPct] = useState(0);
+  // Everything downstream (totals, simulation, report) works from rows that each carry that one share.
+  const holdings: HoldingRow[] = holdingRows.map((row) => ({ ...row, rothPct: balanceRothPct }));
   const [allocation, setAllocation] = useState<AllocationRow[]>([
     { id: "a-0", fund: DEFAULT_FUND, percent: 100 },
   ]);
@@ -972,14 +979,14 @@ function TspProjectionInner() {
   const allocCheck = checkAllocation(allocation);
 
   // --- holdings ------------------------------------------------------------
-  const updateHolding = (id: string, patch: Partial<HoldingRow>) =>
-    setHoldings((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const updateHolding = (id: string, patch: Partial<HoldingInput>) =>
+    setHoldingRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   const addHolding = () =>
-    setHoldings((rows) => [
+    setHoldingRows((rows) => [
       ...rows,
-      { id: newId("h"), fund: nextFund(funds, rows.map((r) => r.fund)), amount: 0, roth: false },
+      { id: newId("h"), fund: nextFund(funds, rows.map((r) => r.fund)), amount: 0 },
     ]);
-  const removeHolding = (id: string) => setHoldings((rows) => rows.filter((r) => r.id !== id));
+  const removeHolding = (id: string) => setHoldingRows((rows) => rows.filter((r) => r.id !== id));
 
   // --- allocation ----------------------------------------------------------
   const updateAllocation = (id: string, patch: Partial<AllocationRow>) =>
@@ -1064,7 +1071,7 @@ function TspProjectionInner() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Current balances */}
           <Card>
-            <CardTitle hint="One row per fund. Tick Roth for Roth balances; add a second row for the same fund if you hold both.">
+            <CardTitle hint="One row per fund, with its total balance (Traditional and Roth together).">
               Current balances
             </CardTitle>
             {holdings.map((row, i) => (
@@ -1100,26 +1107,6 @@ function TspProjectionInner() {
                     style={inputStyle}
                   />
                 </div>
-                <label
-                  htmlFor={`${row.id}-roth`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.35rem",
-                    height: CONTROL_HEIGHT,
-                    fontSize: "0.85rem",
-                    color: "#1e293b",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    id={`${row.id}-roth`}
-                    type="checkbox"
-                    checked={row.roth}
-                    onChange={(e) => updateHolding(row.id, { roth: e.target.checked })}
-                  />
-                  Roth
-                </label>
                 {holdings.length > 1 ? (
                   <RemoveButton label={`Remove balance row ${i + 1}`} onClick={() => removeHolding(row.id)} />
                 ) : (
@@ -1128,6 +1115,22 @@ function TspProjectionInner() {
               </Row>
             ))}
             <AddButton onClick={addHolding}>Add fund</AddButton>
+
+            <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid #f1f5f9" }}>
+              <div style={{ maxWidth: "150px" }}>
+                <label htmlFor="balance-roth" style={labelStyle}>
+                  Roth % of balance
+                </label>
+                <PercentInput id="balance-roth" value={balanceRothPct} onChange={setBalanceRothPct} />
+              </div>
+              <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#64748b", lineHeight: 1.5 }}>
+                Enter the Roth share of your whole account today. The TSP website shows it for the account as a whole,
+                not fund by fund, so this one percentage is applied to every fund above. It doesn't change your
+                projected total. It only affects the Traditional and Roth split of the final balance, which is an
+                estimate that assumes your Roth money is spread evenly across your funds. Leave it blank if everything
+                is Traditional.
+              </div>
+            </div>
           </Card>
 
           {/* Contributions */}

@@ -84,9 +84,11 @@ export default function TspProjectionGuide() {
           (it may call these balances by tax treatment or by source).
         </li>
         <li>
-          Enter one row per fund. If a fund holds both Traditional and Roth money, add it twice and tick
-          <strong> Roth</strong> on the Roth row. Use the latest balances you have; the projection starts from
-          whatever you enter.
+          Enter one row per fund, with that fund's total balance. Then, in <strong>Roth % of balance</strong>,
+          enter the share of your whole account that is Roth (for example, $30,000 of Roth in a $100,000
+          account is 30%); leave it blank if it is all Traditional. The TSP website shows this for the account
+          as a whole, not fund by fund. Use the latest balances you have; the projection starts from whatever
+          you enter.
         </li>
       </Section>
 

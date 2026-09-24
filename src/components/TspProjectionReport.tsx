@@ -110,6 +110,8 @@ export default function TspProjectionReport({
   const endYear = firstYear + horizon;
   const printed = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const heldRows = holdings.filter((h) => h.amount > 0);
+  // Every row carries the same account-wide Roth share
+  const rothShare = holdings[0]?.rothPct ?? 0;
   const allocRows = allocation.filter((a) => a.percent > 0);
   const dollarsNote = todaysDollars ? ` in today's dollars (${inflationPct}% inflation a year)` : " in future dollars";
   const yourTrad = breakdown.regularTraditional + breakdown.catchUpTraditional;
@@ -149,14 +151,13 @@ export default function TspProjectionReport({
             <thead>
               <tr>
                 <th style={{ ...th, textAlign: "left" }}>Current balance</th>
-                <th style={{ ...th, textAlign: "left" }}>Type</th>
                 <th style={th}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {heldRows.length === 0 ? (
                 <tr>
-                  <td style={{ ...td, textAlign: "left" }} colSpan={3}>
+                  <td style={{ ...td, textAlign: "left" }} colSpan={2}>
                     None entered
                   </td>
                 </tr>
@@ -164,13 +165,12 @@ export default function TspProjectionReport({
                 heldRows.map((h) => (
                   <tr key={h.id}>
                     <td style={{ ...td, textAlign: "left" }}>{fundLabel(h.fund)}</td>
-                    <td style={{ ...td, textAlign: "left" }}>{h.roth ? "Roth" : "Traditional"}</td>
                     <td style={td}>{fmtMoney(h.amount)}</td>
                   </tr>
                 ))
               )}
               <tr>
-                <td style={{ ...td, textAlign: "left", fontWeight: 700 }} colSpan={2}>
+                <td style={{ ...td, textAlign: "left", fontWeight: 700 }}>
                   Total (Traditional {fmtMoney(balances.traditional)} · Roth {fmtMoney(balances.roth)})
                 </td>
                 <td style={{ ...td, fontWeight: 700 }}>{fmtMoney(balances.total)}</td>
@@ -180,6 +180,10 @@ export default function TspProjectionReport({
           <div style={{ marginTop: "0.6rem" }}>
             <KeyValues
               rows={[
+                [
+                  "Roth share of current balance",
+                  rothShare > 0 ? `${rothShare}% of the account, spread evenly across funds` : "None (all Traditional)",
+                ],
                 [
                   "Future contribution allocation",
                   allocRows.length ? allocRows.map((a) => `${fundLabel(a.fund)} ${a.percent}%`).join(", ") : "None",

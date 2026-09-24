@@ -29,6 +29,8 @@ import {
   PAY_PERIODS,
   contributionBreakdown,
   projectContributions,
+  splitHolding,
+  summarizeHoldings,
 } from "../src/lib/tspProjection.ts";
 import { inTodaysDollars, simulateProjection } from "../src/lib/tspSimulation.ts";
 
@@ -173,8 +175,8 @@ const simYears = projectContributions(
 const simArgs = {
   monthlyReturns,
   holdings: [
-    { id: "h1", fund: "C", amount: 80_000, roth: false },
-    { id: "h2", fund: "C", amount: 20_000, roth: true },
+    { id: "h1", fund: "C", amount: 80_000, rothPct: 0 },
+    { id: "h2", fund: "C", amount: 20_000, rothPct: 100 },
   ],
   allocation: [
     { id: "a1", fund: "C", percent: 60 },
@@ -199,7 +201,7 @@ expect(sim.below.total <= sim.average.total && sim.average.total <= sim.above.to
 const spread = (fund: string) => {
   const r = simulateProjection({
     monthlyReturns,
-    holdings: [{ id: "h", fund, amount: 100_000, roth: false }],
+    holdings: [{ id: "h", fund, amount: 100_000, rothPct: 0 }],
     allocation: [{ id: "a", fund, percent: 100 }],
     years: projectContributions({ salary: 0, mode: "percent", traditional: 0, roth: 0, age: 40 }, { traditional: 100_000, roth: 0 }, 20),
   });
@@ -229,6 +231,49 @@ expect(near(real.bands[0].p50, sim.bands[0].p50), "today's value unchanged at ye
 expect(near(real.bands[20].p50, sim.bands[20].p50 / 1.03 ** 20), "year 20 deflated by 1.03^20");
 expect(near(real.average.total, sim.average.total / 1.03 ** 20), "end scenario deflated");
 expect(near(real.average.traditional + real.average.roth, real.average.total), "deflated split still adds up");
+
+// --- Roth % on current-balance rows ------------------------------------------
+const rothOf = (amount: number, rothPct: number) => splitHolding({ amount, rothPct });
+expect(
+  near(rothOf(20_000, 30).roth, 6_000) && near(rothOf(20_000, 30).traditional, 14_000),
+  "30% of $20,000 is $6,000 Roth and $14,000 Traditional",
+);
+expect(rothOf(20_000, 0).roth === 0 && rothOf(20_000, 0).traditional === 20_000, "0% Roth is all Traditional");
+expect(rothOf(20_000, 100).traditional === 0 && rothOf(20_000, 100).roth === 20_000, "100% Roth is all Roth");
+expect(rothOf(20_000, 150).roth === 20_000 && rothOf(20_000, 150).traditional === 0, "over 100% counts as 100%");
+expect(rothOf(20_000, -20).roth === 0 && rothOf(20_000, -20).traditional === 20_000, "negative percent counts as 0%");
+expect(rothOf(20_000, NaN).roth === 0, "an invalid percent counts as 0%");
+expect(rothOf(-500, 50).roth === 0 && rothOf(-500, 50).traditional === 0, "a negative balance counts as 0");
+for (const pct of [0, 0.5, 12.5, 33.3, 50, 99, 100]) {
+  const s = rothOf(12_345.67, pct);
+  expect(near(s.traditional + s.roth, 12_345.67), `split at ${pct}% Roth adds back to the balance`);
+}
+
+const mixed = summarizeHoldings([
+  { id: "a", fund: "C", amount: 20_000, rothPct: 30 },
+  { id: "b", fund: "G", amount: 10_000, rothPct: 0 },
+  { id: "c", fund: "C", amount: 5_000, rothPct: 100 },
+]);
+expect(near(mixed.total, 35_000), "summary total is the sum of all balances");
+expect(near(mixed.roth, 6_000 + 5_000), "summary Roth adds each row's Roth share");
+expect(near(mixed.traditional, 14_000 + 10_000), "summary Traditional adds each row's Traditional share");
+expect(near(mixed.byFund.C, 25_000) && near(mixed.byFund.G, 10_000), "per-fund totals ignore the Roth split");
+
+// One row at 30% Roth must project exactly like two rows of the same fund (70% + 30%)
+const oneRow = simulateProjection({ ...simArgs, holdings: [{ id: "x", fund: "C", amount: 100_000, rothPct: 30 }] });
+const twoRows = simulateProjection({
+  ...simArgs,
+  holdings: [
+    { id: "x1", fund: "C", amount: 70_000, rothPct: 0 },
+    { id: "x2", fund: "C", amount: 30_000, rothPct: 100 },
+  ],
+});
+expect(
+  near(oneRow.average.total, twoRows.average.total) &&
+    near(oneRow.average.roth, twoRows.average.roth) &&
+    near(oneRow.average.traditional, twoRows.average.traditional),
+  "a 30% Roth row projects the same as separate Traditional and Roth rows",
+);
 
 // --- Report -----------------------------------------------------------------
 if (failures.length) {
