@@ -159,8 +159,9 @@ function ResultsPanel({
         earnings test — if you have wage income from work after retirement
         above the annual exempt amount, OPM withholds $1 of supplement for
         every $2 you earn over the limit. It is not payable to MRA+10
-        (postponed) or deferred retirees, generally only to those retiring
-        on an immediate, unreduced annuity.
+        retirees (whether or not they postpone their annuity) or to deferred
+        retirees (5 U.S.C. 8421), generally only to those retiring on an
+        immediate, unreduced annuity.
       </div>
     </div>
   );

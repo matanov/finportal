@@ -5,7 +5,7 @@ import FersAnnuityCalculator from '../../components/FersAnnuityCalculator';
 
 <Layout
   title="FERS Basic Annuity Calculator | FersMath"
-  description="Calculate your full FERS basic annuity from your High-3 average salary, years of service, and a survivor benefit election, including the 1.1% age-62 multiplier and the law enforcement/firefighter/ATC special provision."
+  description="Calculate your full FERS basic annuity from your High-3 average salary, years of service, and a survivor benefit election, including the 1.1% age-62 multiplier, MRA+10 early retirement and postponing it, VERA and discontinued service retirement, and the law enforcement/firefighter/ATC special provision."
 >
   <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
     <div style="max-width: 960px; margin: 0 auto;">
@@ -23,10 +23,15 @@ import FersAnnuityCalculator from '../../components/FersAnnuityCalculator';
         <strong>OPM Rule:</strong> Annuity = High-3 average salary × years of service × 1%
         (1.1% if you're retiring at age 62 or older with 20+ years of service). Law enforcement
         officers, firefighters, and air traffic controllers use 1.7% on their first 20 years of
-        covered service and 1% beyond that instead. A full survivor election reduces your annuity
-        10% and pays your spouse 50% of the unreduced amount; a partial election reduces it 5% for
-        a 25% survivor benefit. Source: OPM's FERS computation, eligibility, and survivor benefit
-        pages, and the CSRS/FERS Handbook, Chapter 46.
+        covered service and 1% beyond that instead. Retiring at your Minimum Retirement Age with 10
+        to 29 years (MRA+10) reduces the annuity 5/12 of 1% for each full month you're under 62 when
+        it starts, unless you have 20+ years and it starts at 60 or later. With a VERA offer or an
+        involuntary (discontinued service) separation, you can retire at 50 with 20 years or at any
+        age with 25, with no age reduction. A full survivor election
+        reduces your annuity 10% and pays your spouse 50% of it; a partial election reduces it 5% for
+        a 25% survivor benefit. Source: OPM's FERS computation, eligibility, types-of-retirement and
+        survivor benefit pages, 5 U.S.C. 8414(b) and 8421, 5 CFR 842.403–842.404 and 843.306, and
+        the CSRS/FERS Handbook, Chapter 46.
       </div>
 
       <!-- React calculator — client:load so it hydrates immediately -->
@@ -38,10 +43,11 @@ import FersAnnuityCalculator from '../../components/FersAnnuityCalculator';
                   font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
         <strong style="color: #64748b;">Disclaimer:</strong> This tool is for educational
         purposes only and covers immediate retirement only (62 with 5 years, 60 with 20, your
-        Minimum Retirement Age with 30, or the law enforcement/firefighter/ATC special provision).
-        It does not model MRA+10 (reduced) retirement, deferred retirement, disability retirement,
-        CSRS, unused sick leave credit, or annual cost-of-living adjustments. Always verify your
-        annuity estimate with your agency HR office or OPM before making retirement decisions.
+        Minimum Retirement Age with 30 or with 10, VERA or discontinued service retirement, or the law
+        enforcement/firefighter/ATC special provision). It does not model deferred retirement,
+        disability retirement, separation incentive (VSIP) payments, CSRS, unused sick
+        leave credit, or annual cost-of-living adjustments. Always verify your annuity estimate with
+        your agency HR office or OPM before making retirement decisions.
       </div>
 
     </div>
