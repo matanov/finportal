@@ -10,8 +10,9 @@ const latestArticles = (await getArticles()).slice(0, 3);
 <header
   style="background-color: var(--color-primary-700); border-bottom: 1px solid var(--color-primary-600);"
 >
+  <!-- Spacing and link text shrink on narrow phones so the logo and all three links fit without a sideways scroll -->
   <div
-    style="max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 4rem;"
+    style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 1.5rem); display: flex; align-items: center; justify-content: space-between; height: 4rem;"
   >
     <a
       href="/"
@@ -36,24 +37,25 @@ const latestArticles = (await getArticles()).slice(0, 3);
         </svg>
       </div>
       <span
+        class="brand-name"
         style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: white; letter-spacing: -0.025em;"
         >FERSmath</span
       >
     </a>
-    <nav style="display: flex; align-items: center; gap: 2rem;">
+    <nav style="display: flex; align-items: center; gap: clamp(0.75rem, 3.33vw, 2rem);">
       <a
         href="/calculators"
-        style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;"
+        style="color: var(--color-primary-100); font-size: clamp(0.8rem, 3.5vw, 0.875rem); font-weight: 500; text-decoration: none;"
         >Calculators</a
       >
       <a
         href="/blog"
-        style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;"
+        style="color: var(--color-primary-100); font-size: clamp(0.8rem, 3.5vw, 0.875rem); font-weight: 500; text-decoration: none;"
         >Articles</a
       >
       <a
         href="/about"
-        style="color: var(--color-primary-100); font-size: 0.875rem; font-weight: 500; text-decoration: none;"
+        style="color: var(--color-primary-100); font-size: clamp(0.8rem, 3.5vw, 0.875rem); font-weight: 500; text-decoration: none;"
         >About</a
       >
     </nav>
@@ -236,3 +238,12 @@ const latestArticles = (await getArticles()).slice(0, 3);
     </p>
   </div>
 </footer>
+
+<style>
+  /* Below 360px the wordmark can't fit beside the three nav links; the gold logo icon stays */
+  @media (max-width: 359px) {
+    .brand-name {
+      display: none;
+    }
+  }
+</style>
