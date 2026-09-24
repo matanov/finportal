@@ -484,7 +484,7 @@ document on the date shown.
 | 1% automatic contribution continues after employee contributions stop | TSPFS7 | Verified 2026-09-24 |
 | Match: dollar for dollar on the first 3%, 50 cents on the next 2%, on the first 5% of basic pay **each pay period**; no contribution in a pay period means no match | TSPFS7 | Verified 2026-09-24 |
 | Match **stops when the elective limit (under 50) or the catch-up limit (50+) is reached**; catch-up contributions are eligible for matching on the first 5% of salary | TSPFS7 and TSPFS12 | Verified 2026-09-24 |
-| **$24,500** elective deferral limit for 2026 | The IRS annual limit, mirrored by tsp.gov | **Not independently verified.** tsp.gov renders this figure dynamically, so it is not in the static page. Check it in a browser at the yearly update. |
+| **$24,500** elective deferral limit for 2026, **$8,000** standard catch-up, **$11,250** age 60–63 catch-up | [IRS Newsroom, "401(k) limit increases to $24,500 for 2026"](https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500) — names 401(k), 403(b), governmental 457 plans and the federal TSP together | Verified 2026-09-24 |
 | Roth deferrals made earlier in the year count toward the Roth catch-up requirement (IRS final regulations, September 2025) | Recorded in Issue #5 | Not re-verified |
 | 26 pay periods a year | Assumption for federal biweekly pay | n/a |
 | Historical returns | TSP's published monthly returns and daily share prices | See the README |
@@ -501,6 +501,10 @@ document on the date shown.
   to `/contribution-limits/`. `CONTRIBUTION_LIMITS.source` was updated.
 - **2026-09-24, earlier the same day.** The per-fund Roth checkmark became one account-wide "Roth % of balance"
   box, and the Mutual Fund Window was added with a fixed yearly return.
+- **2026-09-24, $24,500 limit independently verified.** Previously flagged as not independently verified
+  because tsp.gov renders it dynamically. Confirmed against the IRS Newsroom announcement, which names the
+  federal TSP alongside 401(k)/403(b)/governmental 457 plans and states the same $24,500 elective deferral
+  limit, $8,000 standard catch-up and $11,250 age 60–63 catch-up for 2026.
 - **2026-09-24, Guide corrected.** The Guide's "Online" and "Statement" bullets said the TSP shows Traditional
   and Roth for each fund. The site owner checked their own account and statement: both show only the overall
   Roth and Traditional percentage. The two bullets now say so.
@@ -526,7 +530,7 @@ to drift out of date. They cover:
 
 **Every year** (see [Issue #6](https://github.com/matanov/finportal/issues/6)): update `CONTRIBUTION_LIMITS` in
 `src/lib/tspProjection.ts` (`year` first, then the four limits), check the age windows and the Roth catch-up
-rule are unchanged, check the $24,500 figure against tsp.gov in a browser, and run `npm run test:tsp`. The
+rule are unchanged, check the new year's elective deferral limit against tsp.gov in a browser, and run `npm run test:tsp`. The
 tests read the limits from `CONTRIBUTION_LIMITS`, so they should pass unchanged; a failure means a rule
 changed shape.
 
