@@ -474,7 +474,7 @@ function BreakdownTable({
     { label: "Catch-up", note: catchUpNote, roth: false, limit: b.catchUpLimit ? fmtMoney(b.catchUpLimit) : "—", amount: b.catchUpTraditional },
     { label: "Catch-up", note: catchUpNote, roth: true, limit: b.catchUpLimit ? "shared" : "—", amount: b.catchUpRoth },
     { label: "Agency automatic", note: "1% of pay, even if you contribute nothing", roth: false, limit: "—", amount: b.agencyAutomatic },
-    { label: "Agency match", note: "Up to 4% of pay, on regular contributions only", roth: false, limit: "—", amount: b.agencyMatch },
+    { label: "Agency match", note: "Up to 4% of pay, on your Traditional and Roth contributions alike", roth: false, limit: "—", amount: b.agencyMatch },
   ];
 
   return (
@@ -595,7 +595,7 @@ function BreakdownTable({
             the rest of the year.
           </li>
           <li>
-            Agency matching is earned only on regular contributions, so catch-up is never matched. The match stops
+            Agency matching is earned on your regular contributions, Traditional or Roth alike, so catch-up is never matched. The match stops
             once you reach the regular {fmtMoney(CONTRIBUTION_LIMITS.elective)}, which for people 50 and older can be
             before contributions stop.
           </li>
@@ -1776,7 +1776,7 @@ function TspProjectionInner() {
               <>
                 {catchUp > 0 ? (
                   <>
-                    Agency matching applies only to regular contributions, not catch-up, so it stops once you reach
+                    Agency matching applies to regular contributions (Traditional or Roth), not catch-up, so it stops once you reach
                     the {fmtMoney(CONTRIBUTION_LIMITS.elective)} regular limit in pay period{" "}
                     {breakdown.regularLimitPeriod} of 26, which costs <strong>{fmtMoney(breakdown.matchLost)}</strong>{" "}
                     of match.

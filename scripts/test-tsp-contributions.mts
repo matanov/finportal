@@ -280,6 +280,22 @@ expect(
   "a 30% Roth row projects the same as separate Traditional and Roth rows",
 );
 
+// --- Agency match is the same for Traditional and Roth contributions ----------
+// Match is dollar for dollar on the first 3% of pay and 50 cents on the next 2%: 4% of pay at 5% or more.
+const matchSalary = 100_000;
+const matchOf = (traditional: number, roth: number) =>
+  contributionBreakdown({ salary: matchSalary, mode: "percent", traditional, roth, age: 40 }).agencyMatch;
+for (const [pct, expected] of [[1, 1_000], [2, 2_000], [3, 3_000], [4, 3_500], [5, 4_000], [10, 4_000]] as const) {
+  expect(near(matchOf(pct, 0), expected), `${pct}% Traditional earns $${expected} of match`);
+  expect(near(matchOf(0, pct), expected), `${pct}% Roth earns the same $${expected} of match`);
+}
+expect(near(matchOf(2.5, 2.5), 4_000), "2.5% Traditional + 2.5% Roth together earn the full 4% match");
+expect(near(matchOf(1, 4), 4_000) && near(matchOf(4, 1), 4_000), "any Traditional/Roth mix totalling 5% earns the full match");
+expect(
+  near(contributionBreakdown({ salary: matchSalary, mode: "percent", traditional: 0, roth: 5, age: 40 }).agencyAutomatic, 1_000),
+  "the automatic 1% is paid on Roth-only contributions too",
+);
+
 // --- Mutual Fund Window: fixed-rate holdings ---------------------------------
 expect(FIXED_RATE_FUND === "MFW" && DEFAULT_FIXED_RETURN_PCT === 6, "the Mutual Fund Window defaults to 6% a year");
 expect(isFixedRateFund("MFW") && !isFixedRateFund("C") && !isFixedRateFund("L2030"), "only MFW is fixed-rate");
