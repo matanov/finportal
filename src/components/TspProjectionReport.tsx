@@ -311,17 +311,8 @@ export default function TspProjectionReport({
             <li>
               The election reaches the {fmtMoney(breakdown.limit)} limit in pay period {breakdown.limitReachedPeriod};{" "}
               {fmtMoney(breakdown.notContributed)} isn't contributed
-              {breakdown.catchUpLimit === 0 && breakdown.matchLost > 0.5
-                ? ` and ${fmtMoney(breakdown.matchLost)} of agency match is lost`
-                : ""}
+              {breakdown.matchLost > 0.5 ? ` and ${fmtMoney(breakdown.matchLost)} of agency match is lost with it` : ""}
               .
-            </li>
-          )}
-          {breakdown.catchUpLimit > 0 && breakdown.matchLost > 0.5 && (
-            <li>
-              Agency match applies only to regular contributions, not catch-up: it stops when the{" "}
-              {fmtMoney(breakdown.limit - breakdown.catchUpLimit)} regular limit is reached in pay period{" "}
-              {breakdown.regularLimitPeriod}, which loses {fmtMoney(breakdown.matchLost)} of match.
             </li>
           )}
         </ul>
@@ -377,7 +368,7 @@ export default function TspProjectionReport({
       <ul style={{ margin: 0, paddingLeft: "1.1rem", listStyle: "disc", fontSize: "8.5pt", color: "#475569" }}>
         <li>
           Contributions follow the {firstYear} IRS limits ($24,500 regular, plus catch-up from age 50), applied paycheck
-          by paycheck over 26 pay periods, with FERS agency contributions (1% automatic plus up to 4% matching on regular contributions; catch-up is not matched). Salary
+          by paycheck over 26 pay periods, with FERS agency contributions (1% automatic plus up to 4% matching on your Traditional and Roth contributions, catch-up included). Salary
           and limits are held flat.
         </li>
         {result && result.poolSize > 0 && (

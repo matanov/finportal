@@ -16,8 +16,10 @@
  *   - every elected dollar is either contributed or reported as over the limit
  *   - agency money: automatic 1% of pay plus matching (dollar for dollar on 3%,
  *     50 cents on the next 2%), never more than 5% of pay in total; matching
- *     is earned on regular contributions only, so catch-up is never matched
- *     and the match stops when the regular limit is reached
+ *     is earned on every paycheck's contribution, Traditional or Roth and
+ *     catch-up included (TSP fact sheet TSPFS12, "Contributions Toward the
+ *     Catch-Up Limit"), so it stops only when the yearly limit stops the
+ *     contributions
  * and sanity-checks the projection simulation (src/lib/tspSimulation.ts) on
  * the real monthly-returns data: repeatable, percentiles ordered, Traditional
  * + Roth adding up, and G Fund outcomes far tighter than C Fund ones.
@@ -48,6 +50,25 @@ const expect = (cond: boolean, msg: string) => {
 };
 const expectedCatchUp = (age: number) =>
   age < 50 ? 0 : age >= 60 && age <= 63 ? L.catchUp60to63 : L.catchUp50;
+
+// The year's agency match worked out a different way from the implementation, so the test isn't just
+// repeating its arithmetic: a steady election fills whole paychecks until the yearly limit (regular plus
+// catch-up) runs out, then one part-paycheck takes whatever is left. Each paycheck is matched dollar for
+// dollar on the first 3% of pay and 50 cents on the next 2%, on whatever was actually put in.
+const tierMatch = (pct: number) => Math.min(pct, 3) + 0.5 * Math.min(Math.max(pct - 3, 0), 2);
+const expectedMatch = (salary: number, electedPct: number, age: number) => {
+  const pay = salary / PAY_PERIODS;
+  const perPeriod = (pay * electedPct) / 100;
+  if (perPeriod <= 0) return 0;
+  const limit = L.elective + expectedCatchUp(age);
+  const whole = Math.min(PAY_PERIODS, Math.floor(limit / perPeriod + 1e-9));
+  let match = (whole * pay * tierMatch(electedPct)) / 100;
+  if (whole < PAY_PERIODS) {
+    const left = limit - whole * perPeriod;
+    match += (pay * tierMatch((left / pay) * 100)) / 100;
+  }
+  return match;
+};
 
 // --- Matrix of ages x salaries x elections ---------------------------------
 const ages = [45, 49, 50, 55, 59, 60, 61, 62, 63, 64, 70];
@@ -93,9 +114,14 @@ for (const age of ages) {
       // Agency money: automatic 1% always, and automatic + match never above 5% of pay
       expect(near(b.agencyAutomatic, salary * 0.01), `${tag}: automatic ${b.agencyAutomatic}`);
       expect(b.agencyAutomatic + b.agencyMatch <= salary * 0.05 + 0.01, `${tag}: agency ${b.agencyAutomatic + b.agencyMatch} is over 5% of pay`);
-      // Catch-up is never matched: the match is the same as for a 45-year-old with the same election
+      // Every paycheck's contribution is matched, catch-up included, until the yearly limit stops the contributions
+      const wantMatch = expectedMatch(salary, trad + roth, age);
+      expect(near(b.agencyMatch, wantMatch), `${tag}: match ${b.agencyMatch}, expected ${wantMatch}`);
+      // Having catch-up available can only add to the match compared with a 45-year-old making the same election
       const under50 = contributionBreakdown({ salary, mode: "percent", traditional: trad, roth, age: 45 });
-      expect(near(b.agencyMatch, under50.agencyMatch), `${tag}: match ${b.agencyMatch} differs from under-50 match ${under50.agencyMatch}`);
+      expect(b.agencyMatch >= under50.agencyMatch - 0.01, `${tag}: match ${b.agencyMatch} is below the under-50 match ${under50.agencyMatch}`);
+      // Match is only ever lost because contributions were cut off at the limit
+      expect(b.matchLost < 0.005 || b.limitReachedPeriod != null, `${tag}: match lost without hitting the limit`);
     }
   }
 }
@@ -128,26 +154,43 @@ for (const [label, input, t, r] of cases) {
 for (const [trad, roth, match] of [[0, 0, 0], [1, 0, 1_000], [3, 0, 3_000], [4, 0, 3_500], [5, 0, 4_000], [8, 0, 4_000], [2, 3, 4_000]]) {
   const b = contributionBreakdown({ salary: 100_000, mode: "percent", traditional: trad, roth, age: 40 });
   expect(near(b.agencyMatch, match), `${trad}% T + ${roth}% R on $100k: match ${b.agencyMatch}, expected ${match}`);
-  expect(near(b.matchLost, 0) && b.regularLimitPeriod === null, `${trad}% T + ${roth}% R on $100k: nothing should be lost`);
+  expect(near(b.matchLost, 0) && b.limitReachedPeriod === null, `${trad}% T + ${roth}% R on $100k: nothing should be lost`);
 }
 const pay200 = 200_000 / PAY_PERIODS;
 const matchOn = (periods: number) => periods * 0.04 * pay200;
-// 20% of $200,000 at 55 reaches the $24,500 regular limit in pay period 16. Contributions carry on as
-// catch-up until the $32,500 limit (period 22), but only the first 16 paychecks are matched.
+// 20% of $200,000 at 55 is $1,538.46 a paycheck. The $24,500 regular limit is reached in period 16, but
+// contributions carry on as catch-up and every one of them is matched. The $32,500 limit runs out part-way
+// through period 22, which takes only $192.31 (2.5% of pay). So 21 paychecks earn the full 4% match, period 22
+// earns 2.5% of pay, and the last four earn nothing because nothing is contributed: 1.5% + 4 x 4% of pay is lost.
 const frontLoaded = contributionBreakdown({ salary: 200_000, mode: "percent", traditional: 20, roth: 0, age: 55 });
-expect(near(frontLoaded.agencyMatch, matchOn(16)), `front-loaded match ${frontLoaded.agencyMatch}, expected ${matchOn(16)}`);
-expect(near(frontLoaded.matchLost, matchOn(10)), `front-loaded match lost ${frontLoaded.matchLost}, expected ${matchOn(10)}`);
-expect(frontLoaded.regularLimitPeriod === 16, `regular limit reached in period ${frontLoaded.regularLimitPeriod}, expected 16`);
+expect(near(frontLoaded.agencyMatch, matchOn(21) + 0.025 * pay200), `front-loaded match ${frontLoaded.agencyMatch}, expected ${matchOn(21) + 0.025 * pay200}`);
+expect(near(frontLoaded.matchLost, 0.175 * pay200), `front-loaded match lost ${frontLoaded.matchLost}, expected ${0.175 * pay200}`);
 expect(frontLoaded.limitReachedPeriod === 22, `full limit reached in period ${frontLoaded.limitReachedPeriod}, expected 22`);
-// 16% at 55 uses $32,000 of the $32,500 limit, so nothing is cut off, yet the match still stops in period 20
+// The same election at 45 has no catch-up: contributions and the match both stop in period 16
+const noCatchUp = contributionBreakdown({ salary: 200_000, mode: "percent", traditional: 20, roth: 0, age: 45 });
+expect(near(noCatchUp.agencyMatch, matchOn(16)) && near(noCatchUp.matchLost, matchOn(10)), `20% at 45: match ${noCatchUp.agencyMatch}, lost ${noCatchUp.matchLost}`);
+expect(noCatchUp.limitReachedPeriod === 16, `20% at 45: limit reached in period ${noCatchUp.limitReachedPeriod}, expected 16`);
+// 16% at 55 uses $32,000 of the $32,500 limit, so contributions run all year and so does the full match
 const notCut = contributionBreakdown({ salary: 200_000, mode: "percent", traditional: 16, roth: 0, age: 55 });
 expect(near(notCut.notContributed, 0) && notCut.limitReachedPeriod === null, "16% at 55 should not hit the full limit");
-expect(near(notCut.agencyMatch, matchOn(20)), `16% at 55 match ${notCut.agencyMatch}, expected ${matchOn(20)}`);
-expect(notCut.regularLimitPeriod === 20, `16% at 55 regular limit in period ${notCut.regularLimitPeriod}, expected 20`);
+expect(near(notCut.agencyMatch, matchOn(26)) && near(notCut.matchLost, 0), `16% at 55 match ${notCut.agencyMatch}, expected ${matchOn(26)}`);
 // 12% spreads $24,000 across the year: full match all 26 paychecks
 const spreadOut = contributionBreakdown({ salary: 200_000, mode: "percent", traditional: 12, roth: 0, age: 55 });
 expect(near(spreadOut.agencyMatch, matchOn(26)) && near(spreadOut.matchLost, 0), `12% at 55 match ${spreadOut.agencyMatch}, expected ${matchOn(26)}`);
-expect(spreadOut.regularLimitPeriod === null, "12% should never reach the regular limit");
+expect(spreadOut.limitReachedPeriod === null, "12% should never reach the yearly limit");
+// Anyone 50+ contributing the most they can as an even share of pay keeps the full 4% match all year, at any salary
+// (the calculator used to stop the match at the regular limit, understating it by about a quarter)
+for (const [salary, age] of [[100_000, 55], [150_000, 55], [200_000, 55], [240_000, 55], [240_000, 62]] as const) {
+  const maxPct = ((L.elective + expectedCatchUp(age)) / salary) * 100;
+  const b = contributionBreakdown({ salary, mode: "percent", traditional: maxPct, roth: 0, age });
+  expect(near(b.agencyMatch, salary * 0.04) && near(b.matchLost, 0), `max out at ${age} on $${salary}: match ${b.agencyMatch}, expected ${salary * 0.04}`);
+}
+// 30% of $100,000 at 55 is $30,000 a year, under the $32,500 limit: contributions and the full $4,000 match run all year
+const thirty = contributionBreakdown({ salary: 100_000, mode: "percent", traditional: 30, roth: 0, age: 55 });
+expect(near(thirty.agencyMatch, 4_000) && near(thirty.matchLost, 0), `30% of $100k at 55: match ${thirty.agencyMatch}, expected 4000`);
+// Roth-only front-loading earns the same match as Traditional-only
+const rothFront = contributionBreakdown({ salary: 200_000, mode: "percent", traditional: 0, roth: 20, age: 55 });
+expect(near(rothFront.agencyMatch, frontLoaded.agencyMatch), "Roth-only front-loading earns the same match as Traditional-only");
 
 // --- Year by year: 49 → 65 on $200,000, all Traditional ---------------------
 const rows = projectContributions(
@@ -159,9 +202,15 @@ for (const r of rows) {
   const age = r.age as number;
   expect(near(r.employeeTraditional, L.elective), `yearly age ${age}: Traditional ${r.employeeTraditional}`);
   expect(near(r.employeeRoth, expectedCatchUp(age)), `yearly age ${age}: Roth ${r.employeeRoth}`);
-  // Agency money is the same every year: catch-up at 50+ adds nothing to the match
-  expect(near(r.agency, 200_000 * 0.01 + matchOn(16)), `yearly age ${age}: agency ${r.agency}`);
+  // Agency money follows the yearly limit: 49 has no catch-up so the match stops in period 16; 50-59 and 64+
+  // keep contributing (and being matched) until the $32,500 limit runs out in period 22; 60-63 have the higher limit
+  const wantAgency = 200_000 * 0.01 + expectedMatch(200_000, 20, age);
+  expect(near(r.agency, wantAgency), `yearly age ${age}: agency ${r.agency}, expected ${wantAgency}`);
 }
+const agencyAt = (age: number) => rows.find((r) => r.age === age)!.agency;
+expect(near(agencyAt(49), 2_000 + matchOn(16)), "age 49: no catch-up, match stops in period 16");
+expect(near(agencyAt(55), 2_000 + matchOn(21) + 0.025 * pay200), "age 55: matched through the $32,500 limit");
+expect(near(agencyAt(62), 2_000 + matchOn(23) + 0.03875 * pay200), "age 62: matched through the higher $35,750 limit");
 
 // --- Dollar mode with no salary: Roth test can't run, and says so -----------
 const noSalary = contributionBreakdown({ salary: 0, mode: "dollars", traditional: 35_000, roth: 0, age: 61 });

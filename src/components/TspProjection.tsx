@@ -22,8 +22,8 @@
  *   - Future allocation: how new contributions are split across funds, one
  *     row per fund, which must add up to 100%.
  *   - Projection horizon: a fixed list of year spans.
- * The projection itself is still to come; the right-hand panel summarizes
- * the inputs in the meantime.
+ * All the rules and formulas behind these sections are written up in
+ * docs/tsp-projection-calculator.md; keep it in step with any change here.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -474,7 +474,7 @@ function BreakdownTable({
     { label: "Catch-up", note: catchUpNote, roth: false, limit: b.catchUpLimit ? fmtMoney(b.catchUpLimit) : "—", amount: b.catchUpTraditional },
     { label: "Catch-up", note: catchUpNote, roth: true, limit: b.catchUpLimit ? "shared" : "—", amount: b.catchUpRoth },
     { label: "Agency automatic", note: "1% of pay, even if you contribute nothing", roth: false, limit: "—", amount: b.agencyAutomatic },
-    { label: "Agency match", note: "Up to 4% of pay, on your Traditional and Roth contributions alike", roth: false, limit: "—", amount: b.agencyMatch },
+    { label: "Agency match", note: "Up to 4% of pay, on your Traditional and Roth contributions alike, catch-up included", roth: false, limit: "—", amount: b.agencyMatch },
   ];
 
   return (
@@ -595,9 +595,8 @@ function BreakdownTable({
             the rest of the year.
           </li>
           <li>
-            Agency matching is earned on your regular contributions, Traditional or Roth alike, so catch-up is never matched. The match stops
-            once you reach the regular {fmtMoney(CONTRIBUTION_LIMITS.elective)}, which for people 50 and older can be
-            before contributions stop.
+            Agency matching is earned on what you put in each paycheck, Traditional or Roth alike, and that includes
+            catch-up contributions. It stops only when your contributions stop at your yearly limit.
           </li>
           <li>
             Under 50, the {fmtMoney(CONTRIBUTION_LIMITS.elective)} limit is Traditional and Roth combined. Electing
@@ -908,7 +907,6 @@ function TspProjectionInner() {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [age, setAge] = useState<number | null>(null);
   const [salary, setSalary] = useState(0);
-  // Most FERS employees contribute 5%, the level that earns the full agency match.
   // Traditional and Roth elections, kept separately per mode so switching % / $ doesn't lose either.
   // Most FERS employees contribute 5%, the level that earns the full agency match.
   const [tradPct, setTradPct] = useState(5);
@@ -986,8 +984,9 @@ function TspProjectionInner() {
   }, [monthlyReturns, debouncedKey]);
   const endYear = CONTRIBUTION_LIMITS.year + horizon;
   const shown = projection && todaysDollars ? inTodaysDollars(projection, inflationPct) : projection;
-  // Highest whole percent that stays within the regular limit all year (catch-up isn't matched), so the match isn't cut off early
-  const spreadPct = salary > 0 ? Math.floor((CONTRIBUTION_LIMITS.elective / salary) * 100) : 0;
+  // Highest whole percent that stays within your yearly limit (catch-up included, if you're 50+) all year,
+  // so contributions and the match run to the last paycheck instead of stopping early
+  const spreadPct = salary > 0 ? Math.floor((myLimit / salary) * 100) : 0;
   const allocCheck = checkAllocation(allocation);
 
   // --- holdings ------------------------------------------------------------
@@ -1774,24 +1773,13 @@ function TspProjectionInner() {
             )}
             {matchCut && (
               <>
-                {catchUp > 0 ? (
-                  <>
-                    Agency matching applies to regular contributions (Traditional or Roth), not catch-up, so it stops once you reach
-                    the {fmtMoney(CONTRIBUTION_LIMITS.elective)} regular limit in pay period{" "}
-                    {breakdown.regularLimitPeriod} of 26, which costs <strong>{fmtMoney(breakdown.matchLost)}</strong>{" "}
-                    of match.
-                  </>
-                ) : (
-                  <>
-                    Agency matching stops with your contributions, which costs{" "}
-                    <strong>{fmtMoney(breakdown.matchLost)}</strong> of match.
-                  </>
-                )}
+                Agency matching stops with your contributions, which costs{" "}
+                <strong>{fmtMoney(breakdown.matchLost)}</strong> of match.
                 {salary > 0 && spreadPct >= 5 && (
                   <>
                     {" "}
-                    Contributing {spreadPct}% in total instead spreads the {fmtMoney(CONTRIBUTION_LIMITS.elective)}{" "}
-                    regular limit across the whole year and keeps the full match.
+                    Contributing {spreadPct}% in total instead spreads your {fmtMoney(myLimit)} limit across the whole
+                    year and keeps the full match.
                   </>
                 )}
               </>

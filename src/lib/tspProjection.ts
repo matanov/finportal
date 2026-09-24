@@ -1,14 +1,15 @@
 /**
  * tspProjection.ts
  *
- * Inputs for the TSP Projection Calculator: what the person holds today
- * (fund, dollar amount, Traditional or Roth) and how future contributions
- * are allocated across funds (percentages that must add to 100%), plus the
- * projection horizon.
+ * The TSP Projection Calculator's rules, apart from the simulation itself
+ * (tspSimulation.ts): the balance and allocation inputs and their validation,
+ * the IRS contribution limits, one year of contributions (contributionBreakdown:
+ * limits, catch-up, the Roth catch-up rule and FERS agency money) and every
+ * year of the horizon (projectContributions).
  *
- * Only input handling and validation live here so far. The projection
- * itself (contributions, agency match, growth) is still to be built on top
- * of these types.
+ * Every rule, formula, assumption and source is written up in
+ * docs/tsp-projection-calculator.md. Change that document in the same commit
+ * as any change here.
  */
 
 export interface HoldingRow {
@@ -67,7 +68,7 @@ export const DEFAULT_FUND = "C";
 /**
  * IRS limits on employee TSP contributions for one tax year. Update each
  * November when the IRS announces the next year's figures; the TSP mirrors
- * them at https://www.tsp.gov/making-contributions/contribution-limits/.
+ * them at https://www.tsp.gov/contribution-limits/.
  */
 export const CONTRIBUTION_LIMITS = {
   year: 2026,
@@ -79,7 +80,7 @@ export const CONTRIBUTION_LIMITS = {
   catchUp60to63: 11_250,
   /** Prior-year FICA wages above which catch-up contributions must be Roth */
   rothCatchUpWageThreshold: 150_000,
-  source: "https://www.tsp.gov/making-contributions/contribution-limits/",
+  source: "https://www.tsp.gov/contribution-limits/",
 } as const;
 
 /**
@@ -100,8 +101,9 @@ export const PAY_PERIODS = 26;
 const AGENCY_AUTOMATIC_PCT = 1;
 
 /**
- * Agency matching for a regular employee contribution of `pct`% of pay: dollar for dollar on the first 3%,
- * 50 cents on the next 2%. It tops out at 4% of pay, so agency money is at most 5% of pay with the automatic 1%.
+ * Agency matching for an employee contribution of `pct`% of one pay period's pay: dollar for dollar on the
+ * first 3%, 50 cents on the next 2%. It tops out at 4% of pay, so agency money is at most 5% of pay with the
+ * automatic 1%.
  */
 function matchPct(pct: number): number {
   return Math.min(pct, 3) + 0.5 * Math.min(Math.max(pct - 3, 0), 2);
@@ -140,12 +142,10 @@ export interface ContributionBreakdown {
   traditionalRedirectedToRoth: number;
   agencyAutomatic: number;
   agencyMatch: number;
-  /** Matching not earned because the regular limit was reached before the year's last pay period */
+  /** Matching not earned because contributions stopped at the yearly limit before the year's last pay period */
   matchLost: number;
-  /** Pay period (1–26) in which contributions were first cut off by the full limit, or null if never */
+  /** Pay period (1–26) in which contributions were first cut off by the full limit (so the match stops too), or null if never */
   limitReachedPeriod: number | null;
-  /** Pay period (1–26) in which the regular limit was reached, so the match stops (catch-up is not matched), or null if never */
-  regularLimitPeriod: number | null;
   employeeTotal: number;
   agencyTotal: number;
   total: number;
@@ -169,11 +169,14 @@ export interface ContributionBreakdown {
  *      the catch-up amount as Roth keeps both as elected, and electing
  *      everything as Traditional puts the catch-up in as Roth automatically.
  * Agency money is always Traditional: the automatic 1% every pay period,
- * plus matching based on the REGULAR contribution the employee actually put
- * in that period. Catch-up contributions are not matched, so the match stops
- * once the regular limit is reached, even while catch-up keeps going (for
- * people under 50 that is the same moment contributions stop). Automatic plus
- * matching never exceeds 5% of pay.
+ * plus matching based on what the employee actually put in that period,
+ * Traditional or Roth. Contributions toward the catch-up limit are matched
+ * like any other (TSP fact sheet TSPFS12, "Contributions Toward the Catch-Up
+ * Limit": "eligible for matching on the first 5% of your salary"), so the
+ * match keeps going until contributions stop at the yearly limit. Automatic
+ * plus matching never exceeds 5% of pay. The separate IRS annual additions
+ * limit, which would stop matching on catch-up, is not modeled: it is far
+ * above what an election plus a 5% agency contribution can reach.
  */
 export function contributionBreakdown(input: ContributionInput): ContributionBreakdown {
   const salary = Math.max(0, input.salary || 0);
@@ -205,33 +208,28 @@ export function contributionBreakdown(input: ContributionInput): ContributionBre
     agencyMatch: 0,
     matchLost: 0,
     limitReachedPeriod: null,
-    regularLimitPeriod: null,
     employeeTotal: 0,
     agencyTotal: 0,
     total: 0,
   };
 
   // Pass 1, pay period by pay period: how much of each election goes in before the limit stops it.
-  // Only the regular part of a paycheck (what fits under the elective limit) earns matching; catch-up does not.
+  // Whatever goes in each paycheck earns matching, until the yearly limit stops the contributions.
   let contributedSoFar = 0;
-  let regularSoFar = 0;
   let tradIn = 0;
   let rothIn = 0;
   for (let period = 1; period <= PAY_PERIODS; period++) {
     const contributed = Math.min(perPeriod, Math.max(0, limit - contributedSoFar));
-    const regular = Math.min(contributed, Math.max(0, elective - regularSoFar));
     const cut = perPeriod - contributed;
     contributedSoFar += contributed;
-    regularSoFar += regular;
     tradIn += contributed * (1 - rothShare);
     rothIn += contributed * rothShare;
     out.notContributed += cut;
     if (cut > 0.005 && out.limitReachedPeriod == null) out.limitReachedPeriod = period;
-    if (perPeriod - regular > 0.005 && out.regularLimitPeriod == null) out.regularLimitPeriod = period;
 
     if (pay > 0) {
       out.agencyAutomatic += (pay * AGENCY_AUTOMATIC_PCT) / 100;
-      const actual = (pay * matchPct((regular / pay) * 100)) / 100;
+      const actual = (pay * matchPct((contributed / pay) * 100)) / 100;
       const elected = (pay * matchPct((perPeriod / pay) * 100)) / 100;
       out.agencyMatch += actual;
       out.matchLost += elected - actual;

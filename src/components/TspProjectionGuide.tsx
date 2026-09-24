@@ -143,7 +143,7 @@ export default function TspProjectionGuide() {
 
       <Section title="Agency contributions">
         <li>
-          You don't enter these; the calculator works them out (FERS: 1% automatic plus up to 4% matching on regular contributions; catch-up isn't matched). To
+          You don't enter these; the calculator works them out (FERS: 1% automatic plus up to 4% matching on your Traditional and Roth contributions, catch-up included). To
           check, your LES shows the agency automatic and agency matching amounts for each pay period, and your
           TSP statement shows agency contributions received.
         </li>
