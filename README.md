@@ -18,6 +18,7 @@ All live calculators are listed at **[/calculators](https://fersmath.com/calcula
 | TSP Monte Carlo Projection | `/tsp/monte-carlo` | `public/tsp/*.json` (generated, see below) |
 | TSP Projection Calculator | `/tsp/projection` | `src/lib/tspProjection.ts` (contribution rules, IRS limits), `src/lib/tspSimulation.ts` (Monte Carlo); tests: `npm run test:tsp`; **business logic reference: [`docs/tsp-projection-calculator.md`](docs/tsp-projection-calculator.md)**; status and open work in [Issue #5](https://github.com/matanov/finportal/issues/5), yearly updates in [Issue #6](https://github.com/matanov/finportal/issues/6) |
 | FERS Special Retirement Supplement | `/calculator/fers-supplement` | `src/lib/fersSupplement.ts` |
+| FERS Basic Annuity Calculator | `/calculator/fers-annuity` | `src/lib/fersAnnuity.ts` (formula, eligibility, survivor election); tests: `npm run test:fers-annuity`; v1 covers immediate retirement only — see [Issue #3](https://github.com/matanov/finportal/issues/3) for what's deferred |
 
 Articles are MDX files (Markdown that can also embed the interactive chart components) in an Astro [content collection](https://docs.astro.build/en/guides/content-collections/) — see [Writing Articles](#writing-articles) below.
 

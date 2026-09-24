@@ -402,8 +402,10 @@ function ResultsPanel({ result }: { result: High3Result }) {
           }}
         >
           {[10, 15, 20, 25, 30, 35].map((yrs) => {
-            const multiplier = yrs >= 20 ? 0.011 : 0.01;
-            const annuity = result.high3Average * multiplier * yrs;
+            // Always the 1% standard rate: this panel doesn't ask for a retirement age, and the 1.1%
+            // rate needs BOTH age 62+ AND 20+ years — years alone isn't enough. Assuming 1.1% here would
+            // overstate the annuity for anyone retiring under 62. See the linked calculator for that case.
+            const annuity = result.high3Average * 0.01 * yrs;
             return (
               <div
                 key={yrs}
@@ -421,7 +423,7 @@ function ResultsPanel({ result }: { result: High3Result }) {
                     marginBottom: "0.25rem",
                   }}
                 >
-                  {yrs} years × {yrs >= 20 ? "1.1%" : "1%"} multiplier
+                  {yrs} years × 1% multiplier
                 </div>
                 <div
                   style={{
@@ -446,8 +448,13 @@ function ResultsPanel({ result }: { result: High3Result }) {
             marginTop: "0.75rem",
           }}
         >
-          * 1.1% multiplier applies if you retire at age 62+ with 20+ years of
-          service. These are gross estimates before taxes and deductions.
+          * Uses the 1% standard rate for every row. If you'll be 62 or older at retirement with 20+ years
+          of service, you qualify for 1.1% instead — use the{" "}
+          <a href="/calculator/fers-annuity" style={{ color: "#166534", fontWeight: 600 }}>
+            FERS Basic Annuity Calculator
+          </a>{" "}
+          for a figure that accounts for your actual retirement age, special-provision service, and a
+          survivor benefit election. These are gross estimates before taxes and deductions.
         </div>
       </div>
 

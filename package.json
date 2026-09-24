@@ -12,6 +12,7 @@
     "fetch:tsp:historical": "node scripts/fetch-tsp-historical-returns.mjs",
     "consolidate:feedback": "node scripts/consolidate-feedback.mjs",
     "test:tsp": "node --experimental-strip-types --no-warnings scripts/test-tsp-contributions.mts",
+    "test:fers-annuity": "node --experimental-strip-types --no-warnings scripts/test-fers-annuity.mts",
     "prebuild": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",
     "predev": "node scripts/build-pay-lookup.mjs && node scripts/build-tsp-lookup.mjs",
     "dev": "astro dev",

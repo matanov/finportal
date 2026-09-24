@@ -1,0 +1,49 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import FersAnnuityCalculator from '../../components/FersAnnuityCalculator';
+---
+
+<Layout
+  title="FERS Basic Annuity Calculator | FersMath"
+  description="Calculate your full FERS basic annuity from your High-3 average salary, years of service, and a survivor benefit election, including the 1.1% age-62 multiplier and the law enforcement/firefighter/ATC special provision."
+>
+  <main style="min-height: 100vh; background: #f8fafc; padding: 2rem 1rem;">
+    <div style="max-width: 960px; margin: 0 auto;">
+
+      <!-- Breadcrumb -->
+      <nav style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #64748b;">
+        <a href="/" style="color: #2A7D9C; text-decoration: none;">Home</a>
+        <span style="margin: 0 0.5rem;">›</span>
+        <span>FERS Basic Annuity Calculator</span>
+      </nav>
+
+      <!-- OPM Rules notice -->
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem;
+                  padding: 1rem 1.25rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+        <strong>OPM Rule:</strong> Annuity = High-3 average salary × years of service × 1%
+        (1.1% if you're retiring at age 62 or older with 20+ years of service). Law enforcement
+        officers, firefighters, and air traffic controllers use 1.7% on their first 20 years of
+        covered service and 1% beyond that instead. A full survivor election reduces your annuity
+        10% and pays your spouse 50% of the unreduced amount; a partial election reduces it 5% for
+        a 25% survivor benefit. Source: OPM's FERS computation, eligibility, and survivor benefit
+        pages, and the CSRS/FERS Handbook, Chapter 46.
+      </div>
+
+      <!-- React calculator — client:load so it hydrates immediately -->
+      <FersAnnuityCalculator client:load />
+
+      <!-- Disclaimer -->
+      <div style="margin-top: 2rem; padding: 1rem 1.25rem; background: #fff;
+                  border: 1px solid #e2e8f0; border-radius: 0.75rem;
+                  font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+        <strong style="color: #64748b;">Disclaimer:</strong> This tool is for educational
+        purposes only and covers immediate retirement only (62 with 5 years, 60 with 20, your
+        Minimum Retirement Age with 30, or the law enforcement/firefighter/ATC special provision).
+        It does not model MRA+10 (reduced) retirement, deferred retirement, disability retirement,
+        CSRS, unused sick leave credit, or annual cost-of-living adjustments. Always verify your
+        annuity estimate with your agency HR office or OPM before making retirement decisions.
+      </div>
+
+    </div>
+  </main>
+</Layout>
