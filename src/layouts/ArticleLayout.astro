@@ -25,13 +25,9 @@ const badge = draft
     : null;
 ---
 
-<Layout title={`${title} | FersMath`} description={description}>
+<Layout title={`${title} | FersMath`} description={description} ogType="article" ogTitle={title}>
   <Fragment slot="head">
     <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="article" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
     <meta property="article:published_time" content={isoDate(published)} />
     {badge && <meta name="robots" content="noindex, nofollow" />}
   </Fragment>

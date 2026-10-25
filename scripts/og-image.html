@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Source for public/og-image.png, the 1200x630 thumbnail that link previews
+  (iMessage, Slack, LinkedIn, X, Facebook) show for every page. Regenerate with:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+      --hide-scrollbars --window-size=1200,630 \
+      --screenshot=public/og-image.png scripts/og-image.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: 'Playfair Display';
+        font-weight: 700;
+        src: url('../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Inter';
+        font-weight: 500;
+        src: url('../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Inter';
+        font-weight: 600;
+        src: url('../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');
+      }
+      * { margin: 0; box-sizing: border-box; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        background:
+          radial-gradient(circle at 85% 15%, rgba(201, 160, 53, 0.18), transparent 45%),
+          linear-gradient(135deg, #0F2244 0%, #1A3A6E 100%);
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        padding: 72px 80px;
+        display: flex;
+        flex-direction: column;
+      }
+      .brand { display: flex; align-items: center; gap: 22px; }
+      .mark {
+        width: 84px; height: 84px; border-radius: 14px; background: #C9A035;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 64px; letter-spacing: -1.5px; }
+      h1 {
+        font-family: 'Playfair Display', serif; font-weight: 700;
+        font-size: 66px; line-height: 1.12; letter-spacing: -1px;
+        margin-top: 64px; max-width: 980px;
+      }
+      h1 em { font-style: normal; color: #e8c35d; }
+      .tags { margin-top: auto; display: flex; gap: 14px; flex-wrap: wrap; }
+      .tags span {
+        font-weight: 600; font-size: 24px; color: #c5d0e6;
+        border: 2px solid rgba(197, 208, 230, 0.35); border-radius: 999px; padding: 10px 24px;
+      }
+      .url { position: absolute; right: 80px; top: 98px; font-weight: 500; font-size: 26px; color: #9fb0d4; }
+    </style>
+  </head>
+  <body>
+    <div class="brand">
+      <div class="mark">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#0F2244" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="name">FERSmath</div>
+    </div>
+    <div class="url">fersmath.com</div>
+    <h1>Federal retirement planning, <em>done with real math.</em></h1>
+    <div class="tags">
+      <span>FERS Annuity</span>
+      <span>High-3</span>
+      <span>TSP Projection</span>
+      <span>Special Retirement Supplement</span>
+    </div>
+  </body>
+</html>
